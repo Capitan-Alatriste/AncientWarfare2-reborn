@@ -1,0 +1,10 @@
+modLoader="javafml"
+loaderVersion="[21,)"
+license="GPLv3"
+
+[[mods]]
+modId="ancientwarfare"
+version="1.0.0"
+displayName="Ancient Warfare Core"
+description="Ancient Warfare mod for Minecraft 1.21.1"
+authors="shadowmage45, P3pp3rF1y, Capitan-Alatriste"

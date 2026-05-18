@@ -1,158 +1,51 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
-buildscript {
-    repositories {
-        jcenter()
-        maven {
-            name = "forge"
-            url = "http://files.minecraftforge.net/maven"
-        }
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-        classpath "com.wynprice.cursemaven:CurseMaven:2.1.1"
-    }
-}
-
 plugins {
-    id "org.sonarqube" version "2.6.2"
-    id "maven-publish"
-    id "com.wynprice.cursemaven" version "2.1.1"
-    id "de.fuerstenau.buildconfig" version "1.1.8"
+    id 'java'
+    id 'net.neoforged.gradle.userdev' version '7.0.145'
 }
 
-// We apply the 'forge' plugin, so ForgeGradle can do it's stuff.
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'idea'
+group = 'net.shadowmage.ancientwarfare'
+version = '1.0.0-1.21.1'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+
+runs {
+    configureEach {
+        modSource project.sourceSets.main
+    }
+    client {
+        systemProperty 'neoforge.enabledGameTestNamespaces', 'ancientwarfare'
+    }
+    server {
+        systemProperty 'neoforge.enabledGameTestNamespaces', 'ancientwarfare'
+        programArgument '--nogui'
+    }
+    gameTestServer {
+        systemProperty 'neoforge.enabledGameTestNamespaces', 'ancientwarfare'
+    }
+    data {
+        programArguments.addAll '--mod', 'ancientwarfare', '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    }
+}
+
+sourceSets.main.java.srcDirs = ['src/main/java']
+sourceSets.main.resources.srcDirs = ['src/main/resources']
+
+sourceSets.main.java.exclude 'net/shadowmage/ancientwarfare/core/**/*.java'
+sourceSets.main.java.exclude 'net/shadowmage/ancientwarfare/automation/**/*.java'
+sourceSets.main.java.exclude 'net/shadowmage/ancientwarfare/npc/**/*.java'
+sourceSets.main.java.exclude 'net/shadowmage/ancientwarfare/structure/**/*.java'
+sourceSets.main.java.exclude 'net/shadowmage/ancientwarfare/vehicle/**/*.java'
+sourceSets.main.java.exclude 'net/shadowmage/ancientwarfare/model/**/*.java'
 
 repositories {
-    maven {
-        name = "CoFH Maven"
-        url = "http://maven.covers1624.net"
-    }
-    maven {
-        name "LatvianModder Ivy"
-        url = "https://maven.latmod.com/"
-    }
-    maven { 
-        url "http://dvs1.progwml6.com/files/maven" 
-    }
+    mavenCentral()
 }
-
-minecraft{
-    version = minecraft_version + "-" + forge_version
-    mappings = mcp_mappings
-    runDir = "run"
-    replaceIn "automation/AncientWarfareAutomation.java"
-    replaceIn "core/AncientWarfareCore.java"
-    replaceIn "npc/AncientWarfareNPC.java"
-    replaceIn "structure/AncientWarfareStructure.java"
-    replaceIn "vehicle/AncientWarfareVehicles.java"
-    replace "@VERSION@", "${project.minecraft.version}-${project.major}.${project.minor}.${project.patch}." + getBuildNumber() + getStable()
-    replace "0.000.000.001", "$forge_version"
-}
-version = minecraft.version + "-" + project.major +"."+ project.minor +"."+ project.patch +"."+ getBuildNumber() + getStable()
-group = "shadowmage"
-archivesBaseName = "ancientwarfare"
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 dependencies {
-    deobfCompile "cofh:RedstoneFlux:${rf_version}:universal"
-    deobfCompile "mezz.jei:jei_${minecraft_version}:${jei_version}"
-    deobfCompile "codechicken:CodeChickenLib:${ccl_version}:deobf"
-    deobfCompile "com.feed_the_beast.mods:FTBLib:${ftblib_version}"
-    compile "curse.maven:ElectroblobsWizardry:${eb_cf_fileid}"
-    compile "curse.maven:infinitylib:${infinitylib_cf_fileid}"
-    compile "curse.maven:agricraft:${agricraft_cf_fileid}"
+    implementation "net.neoforged:neoforge:21.1.84"
 }
 
-buildConfig {
-    appName = project.name       // sets value of NAME field
-    version = project.version // sets value of VERSION field,
-
-    clsName = 'BuildConfig'      // sets the name of the BuildConfig class
-    packageName = 'net.shadowmage.ancientwarfare'  // sets the package of the BuildConfig class,
-    charset = 'UTF-8'            // sets charset of the generated class,
-
-    buildConfigField 'boolean', 'UNSTABLE', {isUnstable()}
-}
-
-processResources{
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-                
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
-    }
-        
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
-    rename '(.+_at.cfg)', 'META-INF/$1'
-}
-
-jar {
-    manifest {
-        attributes 'FMLAT': 'ancientwarfare_at.cfg'
-    }
-}
-
-static def getBuildNumber() {
-    if (System.getenv("GITHUB_RUN_NUMBER") != null) {
-        return Integer.valueOf(Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER")) + 830).toString()
-    }
-    return ""
-}
-
-def getStable() {
-    if (isUnstable()) {
-        return "unstable"
-    }
-    return ""
-}
-
-def isUnstable() {
-    return (System.getenv("GITHUB_REF") == null || System.getenv("GITHUB_REF").endsWith("-dev"));
-}
-
-task minifyStructureTemplates(type: MinifyStructuresTask) {
-    templateFolder = "$projectDir/src/main/resources/assets/ancientwarfare/template/"
-}
-
-publishing {
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/P3pp3rF1y/AncientWarfare2")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("GPR_USER")
-                password = project.findProperty("gpr.key") ?: System.getenv("GPR_API_KEY")
-            }
-        }
-    }
-    publications {
-        gpr(MavenPublication) {
-            artifactId 'ancientwarfare2'
-
-            from components.java
-        }
-    }
-}
-
-sonarqube {
-    properties {
-        property "sonar.projectName", "Ancient Warfare 2"
-        property "sonar.projectKey", "ancientwarfare"
-    }
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
