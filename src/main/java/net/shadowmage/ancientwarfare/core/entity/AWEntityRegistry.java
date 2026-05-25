@@ -1,11 +1,9 @@
 package net.shadowmage.ancientwarfare.core.entity;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.common.registry.EntityRegistry;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+
 
 public class AWEntityRegistry {
 	private AWEntityRegistry() {}
@@ -44,11 +42,7 @@ public class AWEntityRegistry {
 	public static final String AW_GATES = "aw_gate";
 
 	public static void registerEntity(EntityDeclaration reg) {
-		//TODO fix npc faction entities registration to not trigger this multiple times for same type and just different faction
-		ResourceLocation registryName = new ResourceLocation(reg.modID, reg.entityName);
-		if (!ForgeRegistries.ENTITIES.containsKey(registryName)) {
-			EntityRegistry.registerModEntity(registryName, reg.entityClass, reg.entityName, reg.id, reg.mod(), reg.trackingRange(), reg.updateFrequency(), reg.sendsVelocityUpdates());
-		}
+		// Deferred to Phase 9. 1.21.1 uses DeferredRegister in main mod class.
 	}
 
 	/*
@@ -71,12 +65,12 @@ public class AWEntityRegistry {
 			this.modID = modID;
 		}
 
-		protected Entity createEntity(World world) {
+		protected Entity createEntity(Level world) {
 			try {
-				return entityClass.getConstructor(World.class).newInstance(world);
+				return entityClass.getConstructor(Level.class).newInstance(world);
 			}
 			catch (Exception e) {
-				AncientWarfareCore.LOG.error("Couldn't create entity:" + e.getMessage());
+				System.err.println("Couldn't create entity:" + e.getMessage());
 			}
 			return null;
 		}
