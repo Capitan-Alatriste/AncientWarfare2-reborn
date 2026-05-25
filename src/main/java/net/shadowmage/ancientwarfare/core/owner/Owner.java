@@ -1,12 +1,12 @@
 package net.shadowmage.ancientwarfare.core.owner;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.IEntityOwnable;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.OwnableEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
+
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
@@ -30,17 +30,23 @@ public class Owner {
 		this.name = name;
 	}
 
-	public Owner(EntityPlayer player) {
-		this(player.getUniqueID(), player.getName());
+	public Owner(Player player) {
+		this(player.getUUID(), player.getName().getString());
 	}
 
-	public Owner(ByteBuf buffer) {
-		this(new UUID(buffer.readLong(), buffer.readLong()), ByteBufUtils.readUTF8String(buffer));
+	public Owner(FriendlyByteBuf buffer) {
+		this(new UUID(buffer.readLong(), buffer.readLong()), buffer.readUtf());
 	}
 
-	public Owner(World world, String name) {
-		EntityPlayer player = world.getPlayerEntityByName(name);
-		uuid = player != null ? player.getUniqueID() : new UUID(0, 0);
+	public Owner(Level level, String name) {
+		Player player = null;
+		for(Player p : level.players()) {
+			if(p.getName().getString().equals(name)) {
+				player = p;
+				break;
+			}
+		}
+		uuid = player != null ? player.getUUID() : new UUID(0, 0);
 		this.name = name;
 	}
 
@@ -48,18 +54,18 @@ public class Owner {
 		// check our own implementation of the ownable entities
 		if (entity instanceof IOwnable) {
 			Owner owner = ((IOwnable) entity).getOwner();
-			return isOwnerOrSameTeamOrFriend(entity.world, owner.getUUID(), owner.getName());
+			return isOwnerOrSameTeamOrFriend(entity.level(), owner.getUUID(), owner.getName());
 		}
 		// check if entity implements vanilla interface if the entity is ownable & player is the owner
-		if (entity instanceof IEntityOwnable && ((IEntityOwnable) entity).getOwner() != null) {
-			Entity owner = ((IEntityOwnable) entity).getOwner();
-			return isOwnerOrSameTeamOrFriend(entity.world, owner.getUniqueID(), owner.getName());
+		if (entity instanceof OwnableEntity && ((OwnableEntity) entity).getOwner() != null) {
+			Entity owner = ((OwnableEntity) entity).getOwner();
+			return isOwnerOrSameTeamOrFriend(entity.level(), owner.getUUID(), owner.getName().getString());
 		}
-		return entity != null && isOwnerOrSameTeamOrFriend(entity.world, entity.getUniqueID(), entity.getName());
+		return entity != null && isOwnerOrSameTeamOrFriend(entity.level(), entity.getUUID(), entity.getName().getString());
 	}
 
-	public boolean isOwnerOrSameTeamOrFriend(World world, @Nullable UUID playerId, String playerName) {
-		return TeamViewerRegistry.areFriendly(world, uuid, playerId, name, playerName);
+	public boolean isOwnerOrSameTeamOrFriend(Level level, @Nullable UUID playerId, String playerName) {
+		return TeamViewerRegistry.areFriendly(level, uuid, playerId, name, playerName);
 	}
 
 	public String getName() {
@@ -70,32 +76,32 @@ public class Owner {
 		return uuid;
 	}
 
-	public void serializeToBuffer(ByteBuf buffer) {
+	public void serializeToBuffer(FriendlyByteBuf buffer) {
 		buffer.writeLong(uuid.getMostSignificantBits());
 		buffer.writeLong(uuid.getLeastSignificantBits());
-		ByteBufUtils.writeUTF8String(buffer, name);
+		buffer.writeUtf(name);
 	}
 
-	public NBTTagCompound serializeToNBT(NBTTagCompound tag) {
+	public CompoundTag serializeToNBT(CompoundTag tag) {
 		if (this == EMPTY) {
 			return tag;
 		}
-		tag.setString(OWNER_NAME_TAG, name);
-		tag.setUniqueId(OWNER_ID_TAG, uuid);
+		tag.putString(OWNER_NAME_TAG, name);
+		tag.putUUID(OWNER_ID_TAG, uuid);
 
 		return tag;
 	}
 
-	public static Owner deserializeFromNBT(NBTTagCompound tag) {
-		if (tag.hasKey(OWNER_NAME_TAG)) {
+	public static Owner deserializeFromNBT(CompoundTag tag) {
+		if (tag.contains(OWNER_NAME_TAG)) {
 			//noinspection ConstantConditions - NBTTagCompound has getUniqueId marked as Nullable incorrectly
-			return new Owner(tag.getUniqueId(OWNER_ID_TAG), tag.getString(OWNER_NAME_TAG));
+			return new Owner(tag.getUUID(OWNER_ID_TAG), tag.getString(OWNER_NAME_TAG));
 		}
 		return Owner.EMPTY;
 	}
 
-	public boolean playerHasCommandPermissions(World world, UUID playerId, String playerName) {
-		return this != Owner.EMPTY && TeamViewerRegistry.areTeamMates(world, uuid, playerId, name, playerName);
+	public boolean playerHasCommandPermissions(Level level, UUID playerId, String playerName) {
+		return this != Owner.EMPTY && TeamViewerRegistry.areTeamMates(level, uuid, playerId, name, playerName);
 	}
 
 }
