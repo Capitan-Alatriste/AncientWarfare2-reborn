@@ -1,14 +1,14 @@
 package net.shadowmage.ancientwarfare.core.util;
 
 import com.google.common.collect.AbstractIterator;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.core.Vec3i;
 
 public class MathUtils {
 	private MathUtils() {}
 
-	private static final int NUM_X_BITS = 1 + MathHelper.log2(MathHelper.smallestEncompassingPowerOfTwo(30000000));
+	private static final int NUM_X_BITS = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
 	private static final int NUM_Z_BITS = NUM_X_BITS;
 	private static final int NUM_Y_BITS = 64 - NUM_X_BITS - NUM_Z_BITS;
 	private static final int Y_SHIFT = NUM_Z_BITS;

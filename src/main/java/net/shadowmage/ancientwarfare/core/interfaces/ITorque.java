@@ -1,7 +1,7 @@
 package net.shadowmage.ancientwarfare.core.interfaces;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
 
 import javax.annotation.Nullable;
 
@@ -21,36 +21,36 @@ public final class ITorque {
 		/*
 		 * Return the maximum amount of energy store-able in the passed in block side
 		 */
-		double getMaxTorque(@Nullable EnumFacing from);
+		double getMaxTorque(@Nullable Direction from);
 
 		/*
 		 * Return the value of energy accessible from the passed in block side
 		 */
-		double getTorqueStored(@Nullable EnumFacing from);
+		double getTorqueStored(@Nullable Direction from);
 
 		/*
 		 * Add energy to the specified block side, up to the specified amount.<br>
 		 * Return the value of energy actually added, or 0 for none.
 		 */
-		double addTorque(@Nullable EnumFacing from, double energy);
+		double addTorque(@Nullable Direction from, double energy);
 
 		/*
 		 * Remove energy from the specified block side, up to the specified amount.<br>
 		 * Return the value of energy actually removed, or 0 for none.
 		 */
-		double drainTorque(EnumFacing from, double energy);
+		double drainTorque(Direction from, double energy);
 
 		/*
 		 * Return the maximum amount of torque that the given side may output AT THIS TIME.<br>
 		 * Analogous to the 'simulate' actions from other energy frameworks
 		 */
-		double getMaxTorqueOutput(EnumFacing from);
+		double getMaxTorqueOutput(Direction from);
 
 		/*
 		 * Return the maximum amount of torque that the given side may accept AT THIS TIME.<br>
 		 * Analogous to the 'simulate' actions from other energy frameworks
 		 */
-		double getMaxTorqueInput(@Nullable EnumFacing from);
+		double getMaxTorqueInput(@Nullable Direction from);
 
 		/*
 		 * Return true if this tile can output torque from the given block side.<br>
@@ -58,7 +58,7 @@ public final class ITorque {
 		 * Must return the same value between calls, or issue a neighbor-block update when the value changes.<br>
 		 * You may return true from this method but return 0 for getMaxOutput() for 'toggleable' sides (side will connect but not always accept power)
 		 */
-		boolean canOutputTorque(EnumFacing from);
+		boolean canOutputTorque(Direction from);
 
 		/*
 		 * Return true if this tile can input torque into the given block side.<br>
@@ -66,18 +66,18 @@ public final class ITorque {
 		 * Must return the same value between calls, or issue a neighbor-block update when the value changes.
 		 * You may return true from this method but return 0 for getMaxInput() for 'toggleable' sides (side will connect but not always accept power)
 		 */
-		boolean canInputTorque(EnumFacing from);
+		boolean canInputTorque(Direction from);
 
 		/*
 		 * Used by client for rendering of torque tiles.  If TRUE this tiles neighbor will
 		 * use this tiles output rotation values for rendering of the corresponding input side on the neighbor.
 		 */
-		boolean useOutputRotation(@Nullable EnumFacing from);
+		boolean useOutputRotation(@Nullable Direction from);
 
 		/*
 		 * Return output shaft rotation for the given side.  Will only be called if useOutputRotation(from) returns true.
 		 */
-		float getClientOutputRotation(EnumFacing from, float delta);
+		float getClientOutputRotation(Direction from, float delta);
 	}
 
 	/*
@@ -153,12 +153,12 @@ public final class ITorque {
 			return Math.min(maxOutput, getEnergy());
 		}
 
-		public NBTTagCompound writeToNBT(NBTTagCompound tag) {
-			tag.setDouble("energy", energy);
+		public CompoundTag writeToNBT(CompoundTag tag) {
+			tag.putDouble("energy", energy);
 			return tag;
 		}
 
-		public void readFromNBT(NBTTagCompound tag) {
+		public void readFromNBT(CompoundTag tag) {
 			energy = tag.getDouble("energy");
 		}
 
@@ -176,10 +176,10 @@ public final class ITorque {
 	 */
 	public static class SidedTorqueCell extends TorqueCell {
 
-		EnumFacing dir;
+		Direction dir;
 		ITorqueTile owner;
 
-		public SidedTorqueCell(double in, double out, double max, double eff, EnumFacing dir, ITorqueTile owner) {
+		public SidedTorqueCell(double in, double out, double max, double eff, Direction dir, ITorqueTile owner) {
 			super(in, out, max, eff);
 			this.dir = dir;
 			this.owner = owner;

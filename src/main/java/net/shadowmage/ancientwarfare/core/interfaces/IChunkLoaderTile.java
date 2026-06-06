@@ -1,9 +1,9 @@
 package net.shadowmage.ancientwarfare.core.interfaces;
 
-import net.minecraftforge.common.ForgeChunkManager.Ticket;
+
 
 public interface IChunkLoaderTile {
 
-	public void setTicket(Ticket tk);
+	public void setTicket(Object tk); // TODO: Phase X ForgeChunkManager.Ticket
 
 }

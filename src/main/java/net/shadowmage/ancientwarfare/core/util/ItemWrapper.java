@@ -1,9 +1,8 @@
 package net.shadowmage.ancientwarfare.core.util;
 
-import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
+import net.minecraft.world.item.Item;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -20,25 +19,25 @@ public class ItemWrapper {
 	public static ArrayList<ItemWrapper> buildList(String listName, String[] input) {
 		ArrayList<ItemWrapper> outputList = new ArrayList<>();
 
-		AncientWarfareCore.LOG.info("Building " + listName + "...");
+		System.out.println("Building " + listName + "...");
 
 		for (String itemName : input) {
 			itemName = itemName.trim();
 			if (!itemName.equals("")) {
 				String[] itemId = itemName.split(":");
 				if (Array.getLength(itemId) != 2 && Array.getLength(itemId) != 3) {
-					AncientWarfareCore.LOG.warn(" - Invalid item (bad length of " + Array.getLength(itemId) + "): " + itemId);
+					System.out.println(" - Invalid item (bad length of " + Array.getLength(itemId) + "): " + itemName);
 					continue;
 				}
 				if (itemId[0] == null || itemId[1] == null) {
-					AncientWarfareCore.LOG.warn(" - Invalid block (parse/format error): " + itemId);
+					System.out.println(" - Invalid block (parse/format error): " + itemName);
 					continue;
 				}
 
-				Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemId[0] + ":" + itemId[1]));
+				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId[0] + ":" + itemId[1]));
 
 				if (item == null) {
-					AncientWarfareCore.LOG.warn(" - Skipping missing item: " + itemName);
+					System.out.println(" - Skipping missing item: " + itemName);
 					continue;
 				}
 				short damage = -1;
@@ -47,7 +46,7 @@ public class ItemWrapper {
 						damage = Short.parseShort(itemId[2]);
 					}
 					catch (NumberFormatException e) {
-						AncientWarfareCore.LOG.warn(" - Damage value invalid : '" + itemId[2] + "', must be a number between 0 and " + Short.MAX_VALUE);
+						System.out.println(" - Damage value invalid : '" + itemId[2] + "', must be a number between 0 and " + Short.MAX_VALUE);
 						continue;
 					}
 				}
@@ -55,7 +54,7 @@ public class ItemWrapper {
 			}
 		}
 
-		AncientWarfareCore.LOG.info("...added " + outputList.size() + " items to " + listName);
+		System.out.println("...added " + outputList.size() + " items to " + listName);
 
 		return outputList;
 	}

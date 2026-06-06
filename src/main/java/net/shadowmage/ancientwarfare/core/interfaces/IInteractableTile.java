@@ -1,10 +1,10 @@
 package net.shadowmage.ancientwarfare.core.interfaces;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionHand;
 
 import javax.annotation.Nullable;
 
 public interface IInteractableTile {
-	boolean onBlockClicked(EntityPlayer player, @Nullable EnumHand hand);
+	boolean onBlockClicked(Player player, @Nullable InteractionHand hand);
 }

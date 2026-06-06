@@ -1,18 +1,18 @@
 package net.shadowmage.ancientwarfare.core.interfaces;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.scoreboard.Team;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.Team;
 import net.shadowmage.ancientwarfare.core.config.AWCoreStatics;
 import net.shadowmage.ancientwarfare.core.interfaces.ITorque.ITorqueTile;
 import net.shadowmage.ancientwarfare.core.owner.IOwnable;
-import net.shadowmage.ancientwarfare.core.tile.IBlockBreakHandler;
+
 import net.shadowmage.ancientwarfare.core.upgrade.WorksiteUpgrade;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
 import java.util.Set;
 
-public interface IWorkSite extends ITorqueTile, IBlockBreakHandler, IOwnable {
+public interface IWorkSite extends ITorqueTile, IOwnable { // TODO: Phase X IBlockBreakHandler
 
 	/*
 	 * workers should call this before calling doWork() to make sure that the site
@@ -25,7 +25,7 @@ public interface IWorkSite extends ITorqueTile, IBlockBreakHandler, IOwnable {
 	 */
 	void addEnergyFromWorker(IWorker worker);
 
-	void addEnergyFromPlayer(EntityPlayer player);
+	void addEnergyFromPlayer(Player player);
 
 	/*
 	 * called by workers to validate work-type when IWorker.canWorkAt(IWorkSite) is called

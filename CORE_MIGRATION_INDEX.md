@@ -17,8 +17,8 @@ These packages form the base of the mod and rely mostly on standard Java or core
 
 ### Phase 2: Utilities and Interfaces
 These packages rely on Phase 1 and are heavily used by the rest of the mod.
-- [ ] `util` - General utility methods (BlockTools, ItemTools, NBTHelper, etc.).
-- [ ] `interfaces` - Core mod interfaces.
+- [x] `util` - General utility methods (BlockTools, ItemTools, NBTHelper, etc.).
+- [x] `interfaces` - Core mod interfaces.
 
 ### Phase 3: Registration and Research Framework
 Core registry systems and the research progression logic.
@@ -58,3 +58,7 @@ Connecting all the migrated pieces together.
 - [ ] `proxy` - Client/Server proxy setup.
 - [ ] `init` - Final initialization hooks.
 - [ ] `AncientWarfareCore.java` - The main mod file for the core module.
+
+
+## Phase Notes
+- **Phase 2 (`util` and `interfaces`)**: Migrated. Some classes like `ITabCallback`, `InventoryTools`, `RenderTools`, and the `parsing` package (e.g. `JsonHelper`) have dependencies on unmigrated phases (`gui`, `inventory`, `render`, `config`). These specific lines or classes are marked with `// TODO Phase X` and need to be properly rewritten during those respective phases.

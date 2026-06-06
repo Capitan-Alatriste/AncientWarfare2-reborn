@@ -1,48 +1,46 @@
 package net.shadowmage.ancientwarfare.core.util;
 
-import net.minecraft.nbt.NBTTagCompound;
-
-import java.util.UUID;
+import net.minecraft.nbt.CompoundTag;
 
 public class NBTBuilder {
-	private NBTTagCompound tag = new NBTTagCompound();
 
-	public NBTBuilder setString(String key, String value) {
-		tag.setString(key, value);
-		return this;
+	private final CompoundTag tag;
+
+	public NBTBuilder() {
+		tag = new CompoundTag();
 	}
 
-	public NBTBuilder setBoolean(String key, boolean value) {
-		tag.setBoolean(key, value);
-		return this;
+	public NBTBuilder(CompoundTag tag) {
+		this.tag = tag;
 	}
 
-	public NBTTagCompound build() {
+	public CompoundTag getTag() {
 		return tag;
 	}
 
-	public NBTBuilder setByte(String key, int value) {
-		tag.setByte(key, (byte) value);
+	public NBTBuilder setInt(String name, int value) {
+		tag.putInt(name, value);
 		return this;
 	}
 
-	public NBTBuilder setUniqueId(String key, UUID uniqueId) {
-		tag.setUniqueId(key, uniqueId);
+	public NBTBuilder setFloat(String name, float value) {
+		tag.putFloat(name, value);
 		return this;
 	}
 
-	public NBTBuilder setLong(String key, long value) {
-		tag.setLong(key, value);
+	public NBTBuilder setDouble(String name, double value) {
+		tag.putDouble(name, value);
 		return this;
 	}
 
-	public NBTBuilder setInteger(String key, int value) {
-		tag.setInteger(key, value);
+	public NBTBuilder setString(String name, String value) {
+		tag.putString(name, value);
 		return this;
 	}
 
-	public NBTBuilder setTag(String key, NBTTagCompound tagCompound) {
-		tag.setTag(key, tagCompound);
+	public NBTBuilder setBoolean(String name, boolean value) {
+		tag.putBoolean(name, value);
 		return this;
 	}
+
 }

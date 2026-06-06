@@ -1,11 +1,11 @@
 package net.shadowmage.ancientwarfare.core.interfaces;
 
-import net.shadowmage.ancientwarfare.core.gui.elements.GuiElement;
+
 
 public interface IWidgetSelection {
 
-	public void onWidgetSelected(GuiElement element);
+	public void onWidgetSelected(Object element); // TODO: Phase X GuiElement
 
-	public void onWidgetDeselected(GuiElement element);
+	public void onWidgetDeselected(Object element); // TODO: Phase X GuiElement
 
 }

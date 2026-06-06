@@ -1,30 +1,27 @@
 package net.shadowmage.ancientwarfare.core.util;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import net.minecraft.item.ItemStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 public class ItemTools {
-	private ItemTools() {}
-
-	public static JsonElement serializeToJson(ItemStack stack) {
-		JsonObject ret = new JsonObject();
-		//noinspection ConstantConditions
-		ret.addProperty("name", stack.getItem().getRegistryName().toString());
-		if (stack.getItem().getHasSubtypes() || stack.getItemDamage() != 0) {
-			ret.addProperty("data", stack.getItemDamage());
-		}
-		if (stack.getCount() > 1) {
-			ret.addProperty("count", stack.getCount());
-		}
-
-		if (stack.hasTagCompound()) {
-
-			//noinspection ConstantConditions
-			ret.addProperty("nbt", stack.getTagCompound().toString());
-		}
-
-		return ret;
+	private ItemTools() {
 	}
 
+	public static void dropItemInWorld(Level world, ItemStack stack, double x, double y, double z) {
+		if (stack != null && !stack.isEmpty()) {
+			ItemEntity item = new ItemEntity(world, x, y, z, stack);
+			item.setDeltaMovement(0, 0, 0);
+			world.addFreshEntity(item);
+		}
+	}
+
+	public static void dropItemInWorld(Level world, ItemStack stack, BlockPos pos) {
+		if (stack != null && !stack.isEmpty()) {
+			ItemEntity item = new ItemEntity(world, pos.getX() + 0.5d, pos.getY() + 0.5d, pos.getZ() + 0.5d, stack);
+			item.setDeltaMovement(0, 0, 0);
+			world.addFreshEntity(item);
+		}
+	}
 }
