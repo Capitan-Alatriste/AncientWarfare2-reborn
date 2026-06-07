@@ -1,18 +1,18 @@
 package net.shadowmage.ancientwarfare.core.util.parsing;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
-public class BlockStateMatcher implements Predicate<IBlockState> {
+public class BlockStateMatcher implements Predicate<BlockState> {
 	private final Block block;
 	private final PropertyMapMatcher propertyMatcher = new PropertyMapMatcher();
 
-	public BlockStateMatcher(IBlockState fullState) {
+	public BlockStateMatcher(BlockState fullState) {
 		this(fullState.getBlock());
 		fullState.getProperties().forEach(this::addProperty);
 	}
@@ -21,13 +21,13 @@ public class BlockStateMatcher implements Predicate<IBlockState> {
 		this.block = block;
 	}
 
-	BlockStateMatcher addProperty(IProperty<?> property, Comparable<?> value) {
+	BlockStateMatcher addProperty(Property<?> property, Comparable<?> value) {
 		propertyMatcher.addProperty(property, value);
 		return this;
 	}
 
 	@Override
-	public boolean test(IBlockState state) {
+	public boolean test(BlockState state) {
 		return block == state.getBlock() && propertyMatcher.test(state.getProperties());
 	}
 
@@ -50,10 +50,10 @@ public class BlockStateMatcher implements Predicate<IBlockState> {
 		return result;
 	}
 
-	public static class PropertyMapMatcher implements Predicate<Map<IProperty<?>, Comparable<?>>> {
-		private final Map<IProperty<?>, Comparable<?>> propertyValues = new HashMap<>();
+	public static class PropertyMapMatcher implements Predicate<Map<Property<?>, Comparable<?>>> {
+		private final Map<Property<?>, Comparable<?>> propertyValues = new HashMap<>();
 
-		void addProperty(IProperty<?> property, Comparable<?> value) {
+		void addProperty(Property<?> property, Comparable<?> value) {
 			//noinspection unchecked
 			propertyValues.put(property, value);
 		}
@@ -76,8 +76,8 @@ public class BlockStateMatcher implements Predicate<IBlockState> {
 		}
 
 		@Override
-		public boolean test(Map<IProperty<?>, Comparable<?>> properties) {
-			for (Map.Entry<IProperty<?>, Comparable<?>> property : propertyValues.entrySet()) {
+		public boolean test(Map<Property<?>, Comparable<?>> properties) {
+			for (Map.Entry<Property<?>, Comparable<?>> property : propertyValues.entrySet()) {
 				if (!properties.containsKey(property.getKey()) || !property.getValue().equals(properties.get(property.getKey()))) {
 					return false;
 				}

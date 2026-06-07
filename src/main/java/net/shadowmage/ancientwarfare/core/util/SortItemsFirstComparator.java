@@ -1,9 +1,9 @@
 package net.shadowmage.ancientwarfare.core.util;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -21,9 +21,9 @@ public class SortItemsFirstComparator implements Comparator<ItemStack> {
 			if (element instanceof Item) {
 				matches = s -> s.getItem() == element;
 			} else if (element instanceof Block) {
-				matches = s -> s.getItem() instanceof ItemBlock && ((ItemBlock) s.getItem()).getBlock() == element;
+				matches = s -> s.getItem() instanceof BlockItem && ((BlockItem) s.getItem()).getBlock() == element;
 			} else if (Block.class.isAssignableFrom((Class<?>) element)) {
-				matches = s -> s.getItem() instanceof ItemBlock && ((Class<?>) element).isAssignableFrom(((ItemBlock) s.getItem()).getBlock().getClass());
+				matches = s -> s.getItem() instanceof BlockItem && ((Class<?>) element).isAssignableFrom(((BlockItem) s.getItem()).getBlock().getClass());
 			} else if (Item.class.isAssignableFrom((Class<?>) element)) {
 				matches = s -> ((Class<?>) element).isAssignableFrom(s.getItem().getClass());
 			} else {

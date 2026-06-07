@@ -1,9 +1,9 @@
 package net.shadowmage.ancientwarfare.core.util;
 
 import net.minecraft.client.renderer.texture.SimpleTexture;
-import net.minecraft.client.renderer.texture.TextureUtil;
-import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.resources.ResourceLocation;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -20,7 +20,7 @@ public class TextureFileBased extends SimpleTexture {
 	}
 
 	@Override
-	public void loadTexture(IResourceManager par1ResourceManager) {
+	public void loadTexture(ResourceManager par1ResourceManager) {
 		BufferedImage image;
 		try {
 			image = ImageIO.read(file);

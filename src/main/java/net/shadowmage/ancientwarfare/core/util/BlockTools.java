@@ -1,33 +1,29 @@
 package net.shadowmage.ancientwarfare.core.util;
 
-import com.google.common.collect.AbstractIterator;
-import com.google.common.collect.ImmutableMap;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockHugeMushroom;
-import net.minecraft.block.BlockLever.EnumOrientation;
-import net.minecraft.block.BlockLog;
-import net.minecraft.block.BlockRailBase.EnumRailDirection;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import java.util.Map;
+import java.util.Optional;
+import java.util.MissingResourceException;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import com.google.common.collect.ImmutableMap;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+import java.util.function.Function;
+import net.shadowmage.ancientwarfare.core.util.parsing.PropertyState;
+import com.google.common.collect.AbstractIterator;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.BlockEvent;
 import net.shadowmage.ancientwarfare.core.config.AWCoreStatics;
@@ -229,7 +225,7 @@ public class BlockTools {
 		if (world.isRemote) {
 			return false;
 		}
-		IBlockState state = world.getBlockState(pos);
+		BlockState state = world.getBlockState(pos);
 		Block block = state.getBlock();
 		if (world.isAirBlock(pos) || state.getBlockHardness(world, pos) < 0) {
 			return false;
@@ -243,11 +239,11 @@ public class BlockTools {
 		return world.setBlockToAir(pos);
 	}
 
-	private static boolean canBreakBlock(World world, BlockPos pos, IBlockState state) {
+	private static boolean canBreakBlock(World world, BlockPos pos, BlockState state) {
 		return !AWCoreStatics.fireBlockBreakEvents || !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(world, pos, state, AWFakePlayer.get(world)));
 	}
 
-	public static boolean breakBlockNoDrops(World world, BlockPos pos, IBlockState state) {
+	public static boolean breakBlockNoDrops(World world, BlockPos pos, BlockState state) {
 		if (!BlockTools.canBreakBlock(world, pos, state) || !world.setBlockToAir(pos)) {
 			return false;
 		}
@@ -274,7 +270,7 @@ public class BlockTools {
 	}
 
 	public static void notifyBlockUpdate(World world, BlockPos pos) {
-		IBlockState state = world.getBlockState(pos);
+		BlockState state = world.getBlockState(pos);
 		world.notifyBlockUpdate(pos, state, state, 3);
 
 	}
@@ -289,13 +285,13 @@ public class BlockTools {
 		tile.getWorld().notifyNeighborsRespectDebug(pos, world.getBlockState(pos).getBlock(), true);
 	}
 
-	public static JsonElement serializeToJson(IBlockState state) {
+	public static JsonElement serializeToJson(BlockState state) {
 		JsonObject serializedState = new JsonObject();
 		//noinspection ConstantConditions
-		serializedState.addProperty("name", state.getBlock().getRegistryName().toString());
+		serializedState.addProperty("name", net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
 
 		JsonObject serializedProps = new JsonObject();
-		for (Map.Entry<IProperty<?>, Comparable<?>> prop : state.getProperties().entrySet()) {
+		for (Map.Entry<Property<?>, Comparable<?>> prop : state.getProperties().entrySet()) {
 			serializedProps.addProperty(prop.getKey().getName(), serializeValue(prop.getKey(), prop.getValue()));
 		}
 		if (!serializedProps.entrySet().isEmpty()) {
@@ -304,7 +300,7 @@ public class BlockTools {
 		return serializedState;
 	}
 
-	private static <T extends Comparable<T>> String serializeValue(IProperty<T> property, Comparable<?> valueString) {
+	private static <T extends Comparable<T>> String serializeValue(Property<T> property, Comparable<?> valueString) {
 		//noinspection unchecked
 		return property.getName((T) valueString);
 	}
@@ -324,12 +320,12 @@ public class BlockTools {
 		BlockStateContainer stateContainer = block.getBlockState();
 
 		for (Map.Entry<String, String> prop : properties.entrySet()) {
-			IProperty<?> property = stateContainer.getProperty(prop.getKey());
+			Property<?> property = stateContainer.getProperty(prop.getKey());
 
 			if (property == null) {
 				//noinspection ConstantConditions
-				throw new MissingResourceException("Block \"" + block.getRegistryName().toString() + "\" doesn't have \"" + prop.getKey() + "\" property",
-						IProperty.class.getName(), prop.getKey());
+				throw new MissingResourceException("Block \"" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block).toString() + "\" doesn't have \"" + prop.getKey() + "\" property",
+						Property.class.getName(), prop.getKey());
 			}
 
 			ret = addProperty.apply(ret, property, getPropertyState(block, stateContainer, prop.getKey(), prop.getValue()).getValue());
@@ -338,13 +334,13 @@ public class BlockTools {
 		return ret;
 	}
 
-	public static <T extends Comparable<T>> IBlockState updateProperty(IBlockState state, IProperty<T> property, Comparable<?> value) {
+	public static <T extends Comparable<T>> BlockState updateProperty(BlockState state, Property<T> property, Comparable<?> value) {
 		//noinspection unchecked
-		return state.withProperty(property, (T) value);
+		return state.setValue(property, (T) value);
 	}
 
-	private static <T extends Comparable<T>> Optional<T> getValueHelper(IProperty<T> property, String valueString) {
-		return toJUtilOptional(property.parseValue(valueString));
+	private static <T extends Comparable<T>> Optional<T> getValueHelper(Property<T> property, String valueString) {
+		return toJUtilOptional(property.getValue(valueString));
 	}
 
 	@SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "Guava", "java:S4738"})
@@ -352,8 +348,8 @@ public class BlockTools {
 		return optional.transform(Optional::of).or(Optional::empty);
 	}
 
-	public static IBlockState rotateFacing(IBlockState state, int turns) {
-		for (Map.Entry<IProperty<?>, Comparable<?>> property : state.getProperties().entrySet()) {
+	public static BlockState rotateFacing(BlockState state, int turns) {
+		for (Map.Entry<Property<?>, Comparable<?>> property : state.getValues().entrySet()) {
 			Class<?> valueClass = property.getKey().getValueClass();
 			if (ROTATORS.containsKey(valueClass)) {
 				state = rotateY(state, property.getKey(), turns);
@@ -363,14 +359,14 @@ public class BlockTools {
 		return state;
 	}
 
-	private static <T extends Comparable<T>> IBlockState rotateY(IBlockState state, IProperty<T> property, int turns) {
+	private static <T extends Comparable<T>> BlockState rotateY(BlockState state, Property<T> property, int turns) {
 		//noinspection unchecked
-		return state.withProperty(property, ((IRotator<T>) ROTATORS.get(property.getValueClass())).rotateY(state.getValue(property), turns));
+		return state.setValue(property, ((Rotator<T>) ROTATORS.get(property.getValueClass())).rotateY(state.getValue(property), turns));
 	}
 
 	@SuppressWarnings({"Convert2Lambda", "squid:S1604"})
-	private static final Map<Class<?>, IRotator<?>> ROTATORS = new ImmutableMap.Builder<Class<?>, IRotator<?>>()
-			.put(EnumFacing.class, new IRotator<EnumFacing>() {
+	private static final Map<Class<?>, Rotator<?>> ROTATORS = new ImmutableMap.Builder<Class<?>, Rotator<?>>()
+			.put(EnumFacing.class, new Rotator<EnumFacing>() {
 				@Override
 				public EnumFacing rotateY(EnumFacing facing, int turns) {
 					if (facing.getAxis() == EnumFacing.Axis.Y) {
@@ -383,7 +379,7 @@ public class BlockTools {
 					return facing;
 				}
 			})
-			.put(EnumOrientation.class, new IRotator<EnumOrientation>() {
+			.put(EnumOrientation.class, new Rotator<EnumOrientation>() {
 				@Override
 				public EnumOrientation rotateY(EnumOrientation orientation, int turns) {
 					for (int i = 0; i < turns; i++) {
@@ -416,7 +412,7 @@ public class BlockTools {
 					return orientation;
 				}
 			})
-			.put(BlockLog.EnumAxis.class, new IRotator<BlockLog.EnumAxis>() {
+			.put(BlockLog.EnumAxis.class, new Rotator<BlockLog.EnumAxis>() {
 				@Override
 				public BlockLog.EnumAxis rotateY(BlockLog.EnumAxis facing, int turns) {
 					if (facing == BlockLog.EnumAxis.Y || facing == BlockLog.EnumAxis.NONE || turns % 2 == 0) {
@@ -425,7 +421,7 @@ public class BlockTools {
 					return facing == BlockLog.EnumAxis.X ? BlockLog.EnumAxis.Z : BlockLog.EnumAxis.X;
 				}
 			})
-			.put(EnumFacing.Axis.class, new IRotator<EnumFacing.Axis>() {
+			.put(EnumFacing.Axis.class, new Rotator<EnumFacing.Axis>() {
 				@Override
 				public EnumFacing.Axis rotateY(EnumFacing.Axis facing, int turns) {
 					if (facing == EnumFacing.Axis.Y || turns % 2 == 0) {
@@ -434,7 +430,7 @@ public class BlockTools {
 					return facing == EnumFacing.Axis.X ? EnumFacing.Axis.Z : EnumFacing.Axis.X;
 				}
 			})
-			.put(EnumRailDirection.class, new IRotator<EnumRailDirection>() {
+			.put(EnumRailDirection.class, new Rotator<EnumRailDirection>() {
 				@Override
 				public EnumRailDirection rotateY(EnumRailDirection facing, int turns) {
 					EnumRailDirection rotatedFacing = facing;
@@ -470,7 +466,7 @@ public class BlockTools {
 					}
 				}
 			})
-			.put(BlockHugeMushroom.EnumType.class, new IRotator<BlockHugeMushroom.EnumType>() {
+			.put(BlockHugeMushroom.EnumType.class, new Rotator<BlockHugeMushroom.EnumType>() {
 				@Override
 				public BlockHugeMushroom.EnumType rotateY(BlockHugeMushroom.EnumType facing, int turns) {
 					BlockHugeMushroom.EnumType rotatedFacing = facing;
@@ -506,43 +502,43 @@ public class BlockTools {
 			.build();
 
 	@SuppressWarnings("java:S3740") // this is a method that helps with turning raw property type into generic one
-	public static PropertyState getPropertyState(Block block, BlockStateContainer stateContainer, String propName, String propValue) {
-		IProperty<?> property = stateContainer.getProperty(propName);
+	public static PropertyState getPropertyState(Block block, StateDefinition stateContainer, String propName, String propValue) {
+		Property<?> property = stateContainer.getProperty(propName);
 		if (property == null) {
 			//noinspection ConstantConditions
-			throw new MissingResourceException("Block \"" + block.getRegistryName().toString() + "\" doesn't have \"" + propName + "\" property",
-					IProperty.class.getName(), propName);
+			throw new MissingResourceException("Block \"" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block).toString() + "\" doesn't have \"" + propName + "\" property",
+					Property.class.getName(), propName);
 		}
 
 		return getPropertyState(property, propName, propValue);
 	}
 
-	private static <T extends Comparable<T>, V extends T> PropertyState<T, V> getPropertyState(IProperty<T> property, String propName, String propValue) {
+	private static <T extends Comparable<T>, V extends T> PropertyState<T, V> getPropertyState(Property<T> property, String propName, String propValue) {
 		Optional<?> value = getValueHelper(property, propValue);
 		if (!value.isPresent()) {
-			throw new MissingResourceException("Invalid value \"" + propValue + "\" for property \"" + propName + "\"", IProperty.class.getName(), propName);
+			throw new MissingResourceException("Invalid value \"" + propValue + "\" for property \"" + propName + "\"", Property.class.getName(), propName);
 		}
 		//noinspection unchecked
 		return new PropertyState<>(property, (V) value.get());
 	}
 
 	public static int getTopFilledHeight(World world, int x, int z, boolean skippables, int maxY) {
-		return getTopFilledHeight(world.getChunkFromChunkCoords(x >> 4, z >> 4), x, z, skippables, maxY);
+		return getTopFilledHeight(world.getChunk(x >> 4, z >> 4), x, z, skippables, maxY);
 	}
 
 	public static int getTopFilledHeight(World world, int x, int z, boolean skippables) {
-		return getTopFilledHeight(world.getChunkFromChunkCoords(x >> 4, z >> 4), x, z, skippables);
+		return getTopFilledHeight(world.getChunk(x >> 4, z >> 4), x, z, skippables);
 	}
 
-	public static int getTopFilledHeight(Chunk chunk, int x, int z, boolean skippables) {
-		return getTopFilledHeight(chunk, x, z, skippables, chunk.getTopFilledSegment() + 16);
+	public static int getTopFilledHeight(LevelChunk chunk, int x, int z, boolean skippables) {
+		return getTopFilledHeight(chunk, x, z, skippables, chunk.getMaxBuildHeight());
 	}
 
-	private static int getTopFilledHeight(Chunk chunk, int x, int z, boolean skippables, int maxY) {
+	private static int getTopFilledHeight(LevelChunk chunk, int x, int z, boolean skippables, int maxY) {
 		for (int y = maxY; y > 0; y--) {
-			IBlockState state = chunk.getBlockState(new BlockPos(x, y, z));
+			BlockState state = chunk.getBlockState(new BlockPos(x, y, z));
 			Block block = state.getBlock();
-			if (block == Blocks.AIR || (skippables && AWStructureStatics.isSkippable(state))) {
+			if (block == net.minecraft.world.level.block.Blocks.AIR || (false /* TODO: Phase X AWStructureStatics */)) {
 				continue;
 			}
 			return y;
@@ -550,13 +546,13 @@ public class BlockTools {
 		return -1;
 	}
 
-	private interface IRotator<T extends Comparable<T>> {
+	private interface Rotator<T extends Comparable<T>> {
 
 		T rotateY(T facing, int turns);
 	}
 
 	public interface AddPropertyFunction<T> {
-		T apply(T obj, IProperty<?> property, Comparable<?> value);
+		T apply(T obj, Property<?> property, Comparable<?> value);
 	}
 
 	public static Iterable<BlockPos> getAllInBoxTopDown(BlockPos from, BlockPos to) {

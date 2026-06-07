@@ -1,6 +1,6 @@
 package net.shadowmage.ancientwarfare.core.interfaces;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 
 /*
  * proxy interface to allow for advanced gui interaction from containers
@@ -12,6 +12,6 @@ public interface IContainerGuiCallback {
 
 	public void refreshGui();
 
-	public void handlePacketData(NBTTagCompound data);
+	public void handlePacketData(CompoundTag data);
 
 }

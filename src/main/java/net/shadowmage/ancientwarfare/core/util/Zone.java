@@ -1,10 +1,10 @@
 package net.shadowmage.ancientwarfare.core.util;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.common.util.INBTSerializable;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.BlockPos;
+import net.neoforged.neoforge.common.util.INBTSerializable;
 
-public class Zone implements INBTSerializable<NBTTagCompound> {
+public class Zone implements INBTSerializable<CompoundTag> {
 	public BlockPos min;
 	public BlockPos max;
 
@@ -57,16 +57,16 @@ public class Zone implements INBTSerializable<NBTTagCompound> {
 	}
 
 	@Override
-	public NBTTagCompound serializeNBT() {
-		NBTTagCompound tag = new NBTTagCompound();
-		tag.setLong("min", min.toLong());
-		tag.setLong("max", max.toLong());
+	public CompoundTag serializeNBT() {
+		CompoundTag tag = new CompoundTag();
+		tag.setLong("min", min.asLong());
+		tag.setLong("max", max.asLong());
 		return tag;
 	}
 
 	@Override
-	public void deserializeNBT(NBTTagCompound tag) {
-		min = BlockPos.fromLong(tag.getLong("min"));
-		max = BlockPos.fromLong(tag.getLong("max"));
+	public void deserializeNBT(CompoundTag tag) {
+		min = BlockPos.of(tag.getLong("min"));
+		max = BlockPos.of(tag.getLong("max"));
 	}
 }

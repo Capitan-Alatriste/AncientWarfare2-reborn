@@ -15,8 +15,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import net.shadowmage.ancientwarfare.npc.AncientWarfareNPC;
-import net.shadowmage.ancientwarfare.npc.entity.faction.NpcFaction;
+
+
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -84,8 +84,8 @@ public class EntityTools {
 
 	private static void setDataFromTag(Entity e, NBTTagCompound entityNBT) {
 		NBTTagCompound temp = new NBTTagCompound();
-		if (e instanceof NpcFaction && entityNBT.hasKey(FACTION_NAME_TAG)) {
-			((NpcFaction) e).setFactionNameAndDefaults(entityNBT.getString(FACTION_NAME_TAG));
+		if (false /* TODO: Phase X NpcFaction */) {
+			//((NpcFaction) e).setFactionNameAndDefaults(entityNBT.getString(FACTION_NAME_TAG));
 		}
 		e.writeToNBT(temp);
 		Set<String> keys = entityNBT.getKeySet();

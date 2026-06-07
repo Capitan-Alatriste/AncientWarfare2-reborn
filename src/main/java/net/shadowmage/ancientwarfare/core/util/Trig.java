@@ -1,8 +1,8 @@
 package net.shadowmage.ancientwarfare.core.util;
 
-import net.minecraft.util.Tuple;
-import net.minecraft.util.math.MathHelper;
-import net.shadowmage.ancientwarfare.vehicle.missiles.AmmoHwachaRocket;
+
+import net.minecraft.util.Mth;
+
 
 /*
  * Static Math utilities class<br>
@@ -27,23 +27,23 @@ public class Trig {
 	}
 
 	public static float cosDegrees(float degrees) {
-		return MathHelper.cos(degrees * TORADIANS);
+		return Mth.cos(degrees * TORADIANS);
 	}
 
 	public static float sinDegrees(float degrees) {
-		return MathHelper.sin(degrees * TORADIANS);
+		return Mth.sin(degrees * TORADIANS);
 	}
 
 	public static float cos(float radians) {
-		return MathHelper.cos(radians);
+		return Mth.cos(radians);
 	}
 
 	public static float sin(float radians) {
-		return MathHelper.sin(radians);
+		return Mth.sin(radians);
 	}
 
 	public static float getVelocity(double x, double y, double z) {
-		return MathHelper.sqrt(x * x + y * y + z * z);
+		return Mth.sqrt(x * x + y * y + z * z);
 	}
 
 	public static float getDistance(double x, double y, double z, double x1, double y1, double z1) {
@@ -107,18 +107,18 @@ public class Trig {
 	 * @param v velocity per second
 	 * @return
 	 */
-	public static Tuple<Float, Float> getLaunchAngleToHit(float x, float y, float v) {
+	public static net.minecraft.util.Tuple<Float, Float> getLaunchAngleToHit(float x, float y, float v) {
 		float v2 = v * v;
 		float v4 = v * v * v * v;
 		float x2 = x * x;
-		float sqRtVal = MathHelper.sqrt(v4 - GRAVITY * (GRAVITY * x2 + 2 * y * v2));
+		float sqRtVal = Mth.sqrt(v4 - GRAVITY * (GRAVITY * x2 + 2 * y * v2));
 		float h = v2 + sqRtVal;
 		float l = v2 - sqRtVal;
 		h /= GRAVITY * x;
 		l /= GRAVITY * x;
 		h = wrapTo360(toDegrees((float) Math.atan(h)));
 		l = wrapTo360(toDegrees((float) Math.atan(l)));
-		return new Tuple<>(h, l);
+		return new net.minecraft.util.Tuple<>(h, l);
 	}
 
 	/**
@@ -128,12 +128,12 @@ public class Trig {
 	 * @param v initial launch velocity per second
 	 * @return
 	 */
-	public static Tuple<Float, Float> getLaunchAngleToHit(float x, float y, float z, float v) {
-		return getLaunchAngleToHit(MathHelper.sqrt(x * x + z * z), y, v);
+	public static net.minecraft.util.Tuple<Float, Float> getLaunchAngleToHit(float x, float y, float z, float v) {
+		return getLaunchAngleToHit(Mth.sqrt(x * x + z * z), y, v);
 	}
 
 	public static float iterativeSpeedFinder(float x, float y, float z, float angle, int maxIterations, boolean rocket) {
-		return bruteForceSpeedFinder(MathHelper.sqrt(x * x + z * z), y, angle, maxIterations, rocket);
+		return bruteForceSpeedFinder(Mth.sqrt(x * x + z * z), y, angle, maxIterations, rocket);
 	}
 
 	private static float bruteForceRocketFinder(float x, float y, float angle, int maxIterations) {
@@ -162,9 +162,9 @@ public class Trig {
 			motX = Trig.sinDegrees(angle) * testVelocity * 0.05f;
 			motY = Trig.cosDegrees(angle) * testVelocity * 0.05f;
 
-			rocketBurnTime = (int) (testVelocity * AmmoHwachaRocket.BURN_TIME_FACTOR);
-			motX0 = (motX / (testVelocity * 0.05f)) * AmmoHwachaRocket.ACCELERATION_FACTOR;
-			motY0 = (motY / (testVelocity * 0.05f)) * AmmoHwachaRocket.ACCELERATION_FACTOR;
+		rocketBurnTime = (int) (testVelocity * 1f); // TODO Phase X: AmmoHwachaRocket.BURN_TIME_FACTOR
+		motX0 = (motX / (testVelocity * 0.05f)) * 1f; // TODO Phase X: AmmoHwachaRocket.ACCELERATION_FACTOR
+		motY0 = (motY / (testVelocity * 0.05f)) * 1f; // TODO Phase X: AmmoHwachaRocket.ACCELERATION_FACTOR
 			motX = motX0;
 			motY = motY0;
 			while (motY >= 0 || posY >= y) {

@@ -1,10 +1,10 @@
 package net.shadowmage.ancientwarfare.core.util.parsing;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.function.Predicate;
 
-public class PropertyStateMatcher implements Predicate<IBlockState> {
+public class PropertyStateMatcher implements Predicate<BlockState> {
 	private PropertyState propertyState;
 
 	public PropertyStateMatcher(PropertyState propertyState) {
@@ -12,7 +12,7 @@ public class PropertyStateMatcher implements Predicate<IBlockState> {
 	}
 
 	@Override
-	public boolean test(IBlockState iBlockState) {
+	public boolean test(BlockState iBlockState) {
 		return iBlockState.getValue(propertyState.getProperty()).equals(propertyState.getValue());
 	}
 }

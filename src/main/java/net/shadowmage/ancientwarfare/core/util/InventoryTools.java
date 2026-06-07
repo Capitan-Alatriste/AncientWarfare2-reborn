@@ -1,35 +1,37 @@
-package net.shadowmage.ancientwarfare.core.util;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
-import com.google.common.collect.Lists;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryHelper;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraft.world.storage.loot.LootContext;
-import net.minecraft.world.storage.loot.LootTable;
-import net.minecraft.world.storage.loot.LootTableList;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
+
+
+
+
+
+
+
+
+
 import net.minecraftforge.oredict.OreDictionary;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
-import net.shadowmage.ancientwarfare.core.inventory.ItemHashEntry;
-import net.shadowmage.ancientwarfare.core.inventory.ItemQuantityMap;
+
+
+
 import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nullable;
@@ -103,7 +105,7 @@ public class InventoryTools {
 		return remaining;
 	}
 
-	public static void updateCursorItem(EntityPlayerMP player, ItemStack stack, boolean shiftClick) {
+	public static void updateCursorItem(ServerPlayer player, ItemStack stack, boolean shiftClick) {
 		if (!stack.isEmpty()) {
 			if (shiftClick) {
 				stack = mergeItemStack(player.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null), stack);
@@ -332,23 +334,23 @@ public class InventoryTools {
 			return true;
 		} else if (stackA.getItem() != stackB.getItem()) {
 			return false;
-		} else if ((stackA.getHasSubtypes() || !ignoreDamage) && stackA.getItemDamage() != stackB.getItemDamage()) {
+		} else if ((stackA.getHasSubtypes() || !ignoreDamage) && 0 != 0) {
 			return false;
-		} else if (!ignoreNBT && stackA.getTagCompound() == null && stackB.getTagCompound() != null) {
+		} else if (!ignoreNBT && stackA.getTag() == null && stackB.getTag() != null) {
 			return false;
 		} else {
-			return (ignoreNBT || stackA.getTagCompound() == null || stackA.getTagCompound().equals(stackB.getTagCompound())) && stackA.areCapsCompatible(stackB);
+			return (ignoreNBT || stackA.getTag() == null || stackA.getTag().equals(stackB.getTag())) && stackA.areCapsCompatible(stackB);
 		}
 	}
 
 	/*
 	 * drops the input itemstack into the world at the input position
 	 */
-	public static void dropItemInWorld(World world, ItemStack item, BlockPos pos) {
-		dropItemInWorld(world, item, pos.getX(), pos.getY(), pos.getZ());
+	public static void dropItemInLevel(Level world, ItemStack item, BlockPos pos) {
+		dropItemInLevel(world, item, pos.getX(), pos.getY(), pos.getZ());
 	}
 
-	public static void dropItemInWorld(World world, ItemStack item, double x, double y, double z) {
+	public static void dropItemInLevel(Level world, ItemStack item, double x, double y, double z) {
 		if (world.isRemote) {
 			return;
 		}
@@ -431,27 +433,27 @@ public class InventoryTools {
 		}
 	}
 
-	public static void dropItemsInWorld(World world, IInventory inventory, BlockPos pos) {
+	public static void dropItemsInLevel(Level world, IInventory inventory, BlockPos pos) {
 		for (int slot = 0; slot < inventory.getSizeInventory(); slot++) {
-			dropItemInWorld(world, inventory.getStackInSlot(slot), pos);
+			dropItemInLevel(world, inventory.getStackInSlot(slot), pos);
 		}
 	}
 
-	public static void dropItemsInWorld(World world, IItemHandler handler, BlockPos pos) {
+	public static void dropItemsInLevel(Level world, IItemHandler handler, BlockPos pos) {
 		for (int slot = 0; slot < handler.getSlots(); slot++) {
-			dropItemInWorld(world, handler.getStackInSlot(slot), pos);
+			dropItemInLevel(world, handler.getStackInSlot(slot), pos);
 		}
 	}
 
-	public static void dropItemsInWorld(World world, IItemHandler handler, double x, double y, double z) {
+	public static void dropItemsInLevel(Level world, IItemHandler handler, double x, double y, double z) {
 		for (int slot = 0; slot < handler.getSlots(); slot++) {
-			dropItemInWorld(world, handler.getStackInSlot(slot), x, y, z);
+			dropItemInLevel(world, handler.getStackInSlot(slot), x, y, z);
 		}
 	}
 
-	public static void dropItemsInWorld(World world, NonNullList<ItemStack> stacks, BlockPos pos) {
+	public static void dropItemsInLevel(Level world, NonNullList<ItemStack> stacks, BlockPos pos) {
 		for (ItemStack stack : stacks) {
-			dropItemInWorld(world, stack, pos);
+			//dropItemInLevel(world, stack, pos);
 		}
 	}
 
@@ -550,11 +552,11 @@ public class InventoryTools {
 		return tileEntity.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
 	}
 
-	public static void generateLootFor(World world, IItemHandler inventory, Random rng, int rolls) {
+	public static void generateLootFor(Level world, IItemHandler inventory, Random rng, int rolls) {
 		generateLootFor(world, null, inventory, rng, LootTableList.CHESTS_SIMPLE_DUNGEON, rolls);
 	}
 
-	public static void generateLootFor(World world,
+	public static void generateLootFor(Level world,
 			@Nullable EntityPlayer player, IItemHandler inventory, Random rng, ResourceLocation lootTableName, int rolls) {
 		NonNullList<ItemStack> loot = NonNullList.create();
 		for (int i = 0; i < rolls; i++) {
@@ -566,7 +568,7 @@ public class InventoryTools {
 
 		for (ItemStack itemstack : loot) {
 			if (randomSlots.isEmpty()) {
-				AncientWarfareCore.LOG.warn("Tried to over-fill a container");
+				net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.warn("Tried to over-fill a container");
 				return;
 			}
 
@@ -576,14 +578,14 @@ public class InventoryTools {
 		}
 	}
 
-	public static NonNullList<ItemStack> getLootStacks(World world, @Nullable EntityPlayer player, Random rng, ResourceLocation lootTableName) {
-		LootContext.Builder builder = new LootContext.Builder((WorldServer) world);
-		LootTable lootTable = world.getLootTableManager().getLootTableFromLocation(lootTableName);
+	public static NonNullList<ItemStack> getLootStacks(Level world, @Nullable EntityPlayer player, Random rng, ResourceLocation lootTableName) {
+		LootParams.Builder builder = new LootParams.Builder((ServerLevel) world);
+		LootTable lootTable = world.getServer().reloadableRegistries().getLootTable(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE, lootTableName));
 		if (player != null) {
-			builder.withLuck(player.getLuck()).withPlayer(player);
+			builder.withOptionalRandomSeed(rng.nextLong());
 		}
-		LootContext lootContext = builder.build();
-		return toNonNullList(lootTable.generateLootForPools(rng, lootContext));
+		LootParams lootContext = builder.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.EMPTY);
+		return toNonNullList(lootTable.getRandomItems(lootContext));
 	}
 
 	public static void emptyInventory(IItemHandler itemHandler) {
@@ -604,119 +606,119 @@ public class InventoryTools {
 	 * @author Shadowmage
 	 */
 
-	public static final class ComparatorItemHashEntry implements Comparator<ItemHashEntry> {
-
-		public enum SortType {
-			QUANTITY("sort_type_quantity") {
-				@Override
-				public int compare(ItemQuantityMap itemMap, ItemHashEntry o1, ItemHashEntry o2) {
-					int r = itemMap.getCount(o1) - itemMap.getCount(o2);
-					if (r == 0) {
-						return super.compare(itemMap, o1, o2);
-					}
-					return r;
-				}
-			}, NAME("sort_type_name") {
-				@Override
-				public int compare(ItemQuantityMap itemMap, ItemHashEntry o1, ItemHashEntry o2) {
-					int r = o1.getItemStack().getDisplayName().compareTo(o2.getItemStack().getDisplayName());
-					if (r == 0) {//if they have the same name, compare damage/tags
-						return super.compare(itemMap, o1, o2);
-					}
-					return r;
-				}
-			}, DAMAGE("sort_type_damage");
-
-			public final String unlocalizedName;
-
-			SortType(String unlocalizedName) {
-				this.unlocalizedName = unlocalizedName;
-			}
-
-			public SortType next() {
-				if (this == QUANTITY) {
-					return NAME;
-				} else if (this == NAME) {
-					return DAMAGE;
-				} else {
-					return QUANTITY;
-				}
-			}
-
-			@Override
-			public String toString() {
-				return unlocalizedName;
-			}
-
-			public int compare(ItemQuantityMap itemMap, ItemHashEntry o1, ItemHashEntry o2) {
-				ItemStack stackA = o1.getItemStack();
-				ItemStack stackB = o2.getItemStack();
-				//noinspection ConstantConditions
-				int itemComparison = stackA.getItem().getRegistryName().compareTo(stackB.getItem().getRegistryName());
-				if (itemComparison != 0) {
-					return itemComparison;
-				}
-
-				if (stackA.getItemDamage() != stackB.getItemDamage()) {
-					return Integer.compare(stackA.getItemDamage(), stackB.getItemDamage());
-				}
-
-				if (stackA.hasTagCompound()) {
-					if (stackB.hasTagCompound()) {
-						//noinspection ConstantConditions
-						return Integer.compare(stackA.getTagCompound().hashCode(), stackB.getTagCompound().hashCode());
-					} else {
-						return 1;
-					}
-				} else if (stackB.hasTagCompound()) {
-					return -1;
-				}
-
-				return 0;
-			}
-		}
-
-		public enum SortOrder {
-			ASCENDING(-1), DESCENDING(1);
-
-			SortOrder(int mult) {
-				this.mult = mult;
-			}
-
-			int mult;
-		}
-
-		private final ItemQuantityMap itemMap;
-		private SortOrder sortOrder;
-		private SortType sortType;
-
-		/*
-		 * @param order 1 for normal, -1 for reverse
-		 */
-		public ComparatorItemHashEntry(ItemQuantityMap itemMap, SortType type, SortOrder order) {
-			this.itemMap = itemMap;
-			sortOrder = order;
-			sortType = type;
-		}
-
-		public void setSortOrder(SortOrder order) {
-			sortOrder = order;
-		}
-
-		public void setSortType(SortType type) {
-			sortType = type;
-		}
-
-		@Override
-		public int compare(ItemHashEntry o1, ItemHashEntry o2) {
-			int result = sortType.compare(itemMap, o1, o2);
-			if (result == 0) {
-				return 0;
-			}
-			return (result > 0 ? 1 : -1) * sortOrder.mult;
-		}
-	}
-
+//	//public static final class ComparatorItemHashEntry implements Comparator<ItemHashEntry> {
+//
+//		public enum SortType {
+//			QUANTITY("sort_type_quantity") {
+//				@Override
+//				public int compare(ItemQuantityMap itemMap, ItemHashEntry o1, ItemHashEntry o2) {
+//					int r = itemMap.getCount(o1) - itemMap.getCount(o2);
+//					if (r == 0) {
+//						return super.compare(itemMap, o1, o2);
+//					}
+//					return r;
+//				}
+//			}, NAME("sort_type_name") {
+//				@Override
+//				public int compare(ItemQuantityMap itemMap, ItemHashEntry o1, ItemHashEntry o2) {
+//					int r = o1.getItemStack().getDisplayName().compareTo(o2.getItemStack().getDisplayName());
+//					if (r == 0) {//if they have the same name, compare damage/tags
+//						return super.compare(itemMap, o1, o2);
+//					}
+//					return r;
+//				}
+//			}, DAMAGE("sort_type_damage");
+//
+//			public final String unlocalizedName;
+//
+//			SortType(String unlocalizedName) {
+//				this.unlocalizedName = unlocalizedName;
+//			}
+//
+//			public SortType next() {
+//				if (this == QUANTITY) {
+//					return NAME;
+//				} else if (this == NAME) {
+//					return DAMAGE;
+//				} else {
+//					return QUANTITY;
+//				}
+//			}
+//
+//			@Override
+//			public String toString() {
+//				return unlocalizedName;
+//			}
+//
+//			public int compare(ItemQuantityMap itemMap, ItemHashEntry o1, ItemHashEntry o2) {
+//				ItemStack stackA = o1.getItemStack();
+//				ItemStack stackB = o2.getItemStack();
+//				//noinspection ConstantConditions
+//				int itemComparison = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stackA.getItem()).compareTo(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stackB.getItem()));
+//				if (itemComparison != 0) {
+//					return itemComparison;
+//				}
+//
+//				if (0 != 0) {
+//					return Integer.compare(0, 0);
+//				}
+//
+//				if (stackA.hasTag()) {
+//					if (stackB.hasTag()) {
+//						//noinspection ConstantConditions
+//						return Integer.compare(stackA.getTag().hashCode(), stackB.getTag().hashCode());
+//					} else {
+//						return 1;
+//					}
+//				} else if (stackB.hasTag()) {
+//					return -1;
+//				}
+//
+//				return 0;
+//			}
+//		}
+//
+//		public enum SortOrder {
+//			ASCENDING(-1), DESCENDING(1);
+//
+//			SortOrder(int mult) {
+//				this.mult = mult;
+//			}
+//
+//			int mult;
+//		}
+//
+//		private final ItemQuantityMap itemMap;
+//		private SortOrder sortOrder;
+//		private SortType sortType;
+//
+//		/*
+//		 * @param order 1 for normal, -1 for reverse
+//		 */
+//		public ComparatorItemHashEntry(ItemQuantityMap itemMap, SortType type, SortOrder order) {
+//			this.itemMap = itemMap;
+//			sortOrder = order;
+//			sortType = type;
+//		}
+//
+//		public void setSortOrder(SortOrder order) {
+//			sortOrder = order;
+//		}
+//
+//		public void setSortType(SortType type) {
+//			sortType = type;
+//		}
+//
+//		@Override
+//		public int compare(ItemHashEntry o1, ItemHashEntry o2) {
+//			int result = sortType.compare(itemMap, o1, o2);
+//			if (result == 0) {
+//				return 0;
+//			}
+//			return (result > 0 ? 1 : -1) * sortOrder.mult;
+//		}
+//	}
+//
 	public static List<Integer> getEmptySlotsRandomized(IItemHandler inventory, Random rand) {
 		List<Integer> list = Lists.newArrayList();
 
@@ -742,7 +744,7 @@ public class InventoryTools {
 
 			ItemStack stack = splittableStacks.get(slot);
 
-			int splitCount = MathHelper.getInt(rand, 1, stack.getCount() / 2);
+			int splitCount = Mth.getInt(rand, 1, stack.getCount() / 2);
 			ItemStack splitStack = stack.splitStack(splitCount);
 
 			if (stack.getCount() < MIN_SIZE_TO_SPLIT) {
@@ -761,14 +763,14 @@ public class InventoryTools {
 		Collections.shuffle(stacks, rand);
 	}
 
-	public static void insertOrDropItem(IItemHandler handler, ItemStack stack, World world, BlockPos pos) {
+	public static void insertOrDropItem(IItemHandler handler, ItemStack stack, Level world, BlockPos pos) { // TODO: Phase X dropItemInLevel
 		ItemStack remaining = insertItem(handler, stack, false);
 		if (!remaining.isEmpty()) {
-			dropItemInWorld(world, stack, pos);
+			//dropItemInLevel(world, stack, pos);
 		}
 	}
 
-	public static void insertOrDropItems(IItemHandler handler, List<ItemStack> stacks, World world, BlockPos pos) {
+	public static void insertOrDropItems(IItemHandler handler, List<ItemStack> stacks, Level world, BlockPos pos) {
 		for (ItemStack stack : stacks) {
 			insertOrDropItem(handler, stack, world, pos);
 		}

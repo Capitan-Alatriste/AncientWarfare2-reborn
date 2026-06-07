@@ -1,6 +1,6 @@
 package net.shadowmage.ancientwarfare.core.util;
 
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
+
 import org.apache.commons.io.IOUtils;
 
 import javax.annotation.Nullable;
@@ -30,11 +30,11 @@ public class FileUtils {
 			@Nullable Path root = null;
 			if (source.isFile()) {
 				try {
-					fs = FileSystems.newFileSystem(source.toPath(), null);
+					fs = FileSystems.newFileSystem(source.toPath(), (ClassLoader) null);
 					root = fs.getPath("/" + base);
 				}
 				catch (IOException e) {
-					AncientWarfareCore.LOG.error("Error loading FileSystem from jar: ", e);
+					net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error loading FileSystem from jar: ", e);
 					return;
 				}
 			} else if (source.isDirectory()) {
@@ -58,7 +58,7 @@ public class FileUtils {
 					itr = Files.walk(root).iterator();
 				}
 				catch (IOException e) {
-					AncientWarfareCore.LOG.error("Error iterating filesystem for: {}", root, e);
+					net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error iterating filesystem for: {}", root, e);
 					return;
 				}
 
@@ -83,23 +83,23 @@ public class FileUtils {
 			}
 		}
 		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Error exporting file: " + exportFile.getAbsolutePath(), e);
+			net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error exporting file: " + exportFile.getAbsolutePath(), e);
 		}
 	}
 
 	private static boolean createFile(File exportFile) {
 		try {
 			if (!exportFile.getParentFile().exists() && !exportFile.getParentFile().mkdirs()) {
-				AncientWarfareCore.LOG.error("Unable to create folders for file : " + exportFile.getAbsolutePath());
+				net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Unable to create folders for file : " + exportFile.getAbsolutePath());
 				return true;
 			}
 			if (!exportFile.createNewFile()) {
-				AncientWarfareCore.LOG.error("Unable to open new file : " + exportFile.getAbsolutePath());
+				net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Unable to open new file : " + exportFile.getAbsolutePath());
 				return true;
 			}
 		}
 		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Error opening file : " + exportFile.getAbsolutePath(), e);
+			net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error opening file : " + exportFile.getAbsolutePath(), e);
 			return true;
 		}
 		return false;

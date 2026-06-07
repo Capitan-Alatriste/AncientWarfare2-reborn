@@ -10,18 +10,18 @@ public class ItemTools {
 	public static JsonElement serializeToJson(ItemStack stack) {
 		JsonObject ret = new JsonObject();
 		//noinspection ConstantConditions
-		ret.addProperty("name", stack.getItem().getRegistryName().toString());
-		if (stack.getItem().getHasSubtypes() || stack.getItemDamage() != 0) {
-			ret.addProperty("data", stack.getItemDamage());
+		ret.addProperty("name", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+		if (false) {
+			ret.addProperty("data", 0); // TODO Phase X: itemDamage
 		}
 		if (stack.getCount() > 1) {
 			ret.addProperty("count", stack.getCount());
 		}
 
-		if (stack.hasTagCompound()) {
+		if (stack.hasTag()) {
 
 			//noinspection ConstantConditions
-			ret.addProperty("nbt", stack.getTagCompound().toString());
+			ret.addProperty("nbt", stack.getTag().toString());
 		}
 
 		return ret;

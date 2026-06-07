@@ -1,6 +1,6 @@
 package net.shadowmage.ancientwarfare.core.interfaces;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 
 /*
  * blind entity packet handling
@@ -11,6 +11,6 @@ import net.minecraft.nbt.NBTTagCompound;
  */
 public interface IEntityPacketHandler {
 
-	public void handlePacketData(NBTTagCompound tag);
+	public void handlePacketData(CompoundTag tag);
 
 }

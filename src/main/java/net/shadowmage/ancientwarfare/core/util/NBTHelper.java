@@ -1,18 +1,18 @@
 package net.shadowmage.ancientwarfare.core.util;
 
 import com.google.common.collect.ImmutableMap;
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.util.Tuple;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.common.util.INBTSerializable;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
+import net.minecraft.core.BlockPos;
+
+import net.neoforged.neoforge.common.util.INBTSerializable;
+
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,128 +30,128 @@ import java.util.stream.Collector;
 public class NBTHelper {
 	private NBTHelper() {}
 
-	public static IBlockState getBlockState(NBTTagCompound blockStateTag) {
-		return BlockTools.getBlockState(new Tuple<>(blockStateTag.getString("blockName"), getStateProperties(blockStateTag.getCompoundTag("properties"))),
-				Block::getDefaultState, BlockTools::updateProperty);
+	public static BlockState getBlockState(CompoundTag blockStateTag) {
+		return BlockTools.getBlockState(new Tuple<>(blockStateTag.getString("blockName"), getStateProperties(blockStateTag.getCompound("properties"))),
+				Block::defaultBlockState, BlockTools::updateProperty);
 	}
 
-	private static Map<String, String> getStateProperties(NBTTagCompound propertiesTag) {
+	private static Map<String, String> getStateProperties(CompoundTag propertiesTag) {
 		Map<String, String> ret = new HashMap<>();
-		for (String key : propertiesTag.getKeySet()) {
-			if (propertiesTag.hasKey(key, Constants.NBT.TAG_STRING)) {
+		for (String key : propertiesTag.getAllKeys()) {
+			if (propertiesTag.contains(key, Tag.TAG_STRING)) {
 				ret.put(key, propertiesTag.getString(key));
 			}
 		}
 		return ret;
 	}
 
-	public static NBTTagCompound getBlockStateTag(IBlockState state) {
-		NBTTagCompound ret = new NBTTagCompound();
+	public static CompoundTag getBlockStateTag(BlockState state) {
+		CompoundTag ret = new CompoundTag();
 		//noinspection ConstantConditions
-		ret.setString("blockName", state.getBlock().getRegistryName().toString());
+		ret.putString("blockName", net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
 		if (!state.getProperties().isEmpty()) {
-			ret.setTag("properties", getStatePropertiesTag(state.getProperties()));
+			ret.put("properties", getStatePropertiesTag(state.getProperties()));
 		}
 		return ret;
 	}
 
-	private static NBTTagCompound getStatePropertiesTag(ImmutableMap<IProperty<?>, Comparable<?>> properties) {
-		NBTTagCompound propertiesTag = new NBTTagCompound();
+	private static CompoundTag getStatePropertiesTag(ImmutableMap<Property<?>, Comparable<?>> properties) {
+		CompoundTag propertiesTag = new CompoundTag();
 
-		for (Map.Entry<IProperty<?>, Comparable<?>> property : properties.entrySet()) {
-			propertiesTag.setString(property.getKey().getName(), serializeValue(property.getKey(), property.getValue()));
+		for (Map.Entry<Property<?>, Comparable<?>> property : properties.entrySet()) {
+			propertiesTag.putString(property.getKey().getName(), serializeValue(property.getKey(), property.getValue()));
 		}
 
 		return propertiesTag;
 	}
 
-	private static <T extends Comparable<T>> String serializeValue(IProperty<T> property, Comparable<?> valueString) {
+	private static <T extends Comparable<T>> String serializeValue(Property<T> property, Comparable<?> valueString) {
 		//noinspection unchecked
 		return property.getName((T) valueString);
 	}
 
-	public static <T> Set<T> getSet(NBTTagList tagList, Function<NBTBase, T> getElement) {
+	public static <T> Set<T> getSet(ListTag tagList, Function<Tag, T> getElement) {
 		Set<T> ret = new HashSet<>();
-		for (NBTBase tag : tagList) {
+		for (Tag tag : tagList) {
 			ret.add(getElement.apply(tag));
 		}
 		return ret;
 	}
 
-	public static <T> List<T> getList(NBTTagList tagList, Function<NBTBase, T> getElement) {
+	public static <T> List<T> getList(ListTag tagList, Function<Tag, T> getElement) {
 		ArrayList<T> ret = new ArrayList<>();
-		for (NBTBase tag : tagList) {
+		for (Tag tag : tagList) {
 			ret.add(getElement.apply(tag));
 		}
 		return ret;
 	}
 
-	public static Set<String> getStringSet(NBTTagList tagList) {
-		return getSet(tagList, tag -> ((NBTTagString) tag).getString());
+	public static Set<String> getStringSet(ListTag tagList) {
+		return getSet(tagList, tag -> ((StringTag) tag).getString());
 	}
 
-	public static <T> NBTTagList getTagList(Collection<T> collection, Function<T, NBTBase> serializeElement) {
-		NBTTagList ret = new NBTTagList();
-		collection.forEach(element -> ret.appendTag(serializeElement.apply(element)));
+	public static <T> ListTag getTagList(Collection<T> collection, Function<T, Tag> serializeElement) {
+		ListTag ret = new ListTag();
+		collection.forEach(element -> ret.add(serializeElement.apply(element)));
 		return ret;
 	}
 
-	public static NBTTagList getNBTStringList(Collection<String> strings) {
-		NBTTagList ret = new NBTTagList();
-		strings.forEach(str -> ret.appendTag(new NBTTagString(str)));
+	public static ListTag getNBTStringList(Collection<String> strings) {
+		ListTag ret = new ListTag();
+		strings.forEach(str -> ret.add(StringTag.valueOf(str)));
 		return ret;
 	}
 
-	public static NBTTagList getNBTUniqueIdList(Collection<UUID> uuids) {
-		NBTTagList ret = new NBTTagList();
-		uuids.forEach(uuid -> ret.appendTag(new NBTBuilder().setUniqueId("uuid", uuid).build()));
+	public static ListTag getNBTUniqueIdList(Collection<UUID> uuids) {
+		ListTag ret = new ListTag();
+		uuids.forEach(uuid -> ret.add(new NBTBuilder().setUniqueId("uuid", uuid).build()));
 		return ret;
 	}
 
-	public static Set<UUID> getUniqueIdSet(NBTBase tag) {
-		return getSet(getTagList(tag, Constants.NBT.TAG_COMPOUND), element -> ((NBTTagCompound) element).getUniqueId("uuid"));
+	public static Set<UUID> getUniqueIdSet(Tag tag) {
+		return getSet(getTagList(tag, Tag.TAG_COMPOUND), element -> ((CompoundTag) element).getUniqueId("uuid"));
 	}
 
-	private static NBTTagList getTagList(NBTBase tag, int type) {
+	private static ListTag getTagList(Tag tag, int type) {
 		try {
 			if (tag.getId() == 9) {
-				NBTTagList nbttaglist = (NBTTagList) tag;
+				ListTag nbttaglist = (ListTag) tag;
 
-				if (!nbttaglist.hasNoTags() && nbttaglist.getTagType() != type) {
-					return new NBTTagList();
+				if (!nbttaglist.isEmpty() && nbttaglist.getElementType() != type) {
+					return new ListTag();
 				}
 
 				return nbttaglist;
 			}
 		}
 		catch (ClassCastException classcastexception) {
-			AncientWarfareCore.LOG.error("Error casting tag to taglist: {}", tag);
+			net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error casting tag to taglist: {}", tag);
 		}
 
-		return new NBTTagList();
+		return new ListTag();
 	}
 
-	public static final Collector<NBTBase, NBTTagList, NBTTagList> NBTLIST_COLLECTOR =
-			Collector.of(NBTTagList::new, NBTTagList::appendTag, (l1, l2) -> {
-				l2.forEach(l1::appendTag);
+	public static final Collector<Tag, ListTag, ListTag> NBTLIST_COLLECTOR =
+			Collector.of(ListTag::new, ListTag::add, (l1, l2) -> {
+				l2.forEach(l1::add);
 				return l1;
 			});
 
-	public static NBTTagCompound writeBlockPosToNBT(NBTTagCompound tag, BlockPos pos) {
-		tag.setInteger("x", pos.getX());
-		tag.setInteger("y", pos.getY());
-		tag.setInteger("z", pos.getZ());
+	public static CompoundTag writeBlockPosToNBT(CompoundTag tag, BlockPos pos) {
+		tag.putInt("x", pos.getX());
+		tag.putInt("y", pos.getY());
+		tag.putInt("z", pos.getZ());
 		return tag;
 	}
 
-	public static BlockPos readBlockPosFromNBT(NBTTagCompound tag) {
-		return new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z"));
+	public static BlockPos readBlockPosFromNBT(CompoundTag tag) {
+		return new BlockPos(tag.getInt("x"), tag.getInt("y"), tag.getInt("z"));
 	}
 
-	public static <K, V> Map<K, V> getMap(NBTTagList list, Function<NBTTagCompound, K> getKey, Function<NBTTagCompound, V> getValue) {
+	public static <K, V> Map<K, V> getMap(ListTag list, Function<CompoundTag, K> getKey, Function<CompoundTag, V> getValue) {
 		Map<K, V> ret = new HashMap<>();
 		for (int i = 0; i < list.tagCount(); i++) {
-			NBTTagCompound tag = list.getCompoundTagAt(i);
+			CompoundTag tag = list.getCompound(i);
 
 			ret.put(getKey.apply(tag), getValue.apply(tag));
 		}
@@ -159,33 +159,33 @@ public class NBTHelper {
 		return ret;
 	}
 
-	public static <K, V> NBTTagList mapToCompoundList(Map<K, V> map, BiConsumer<NBTTagCompound, K> setKeyTag, BiConsumer<NBTTagCompound, V> setValueTag) {
-		NBTTagList list = new NBTTagList();
+	public static <K, V> ListTag mapToCompoundList(Map<K, V> map, BiConsumer<CompoundTag, K> setKeyTag, BiConsumer<CompoundTag, V> setValueTag) {
+		ListTag list = new ListTag();
 		for (Map.Entry<K, V> entry : map.entrySet()) {
-			NBTTagCompound nbtEntry = new NBTTagCompound();
+			CompoundTag nbtEntry = new CompoundTag();
 			setKeyTag.accept(nbtEntry, entry.getKey());
 			setValueTag.accept(nbtEntry, entry.getValue());
 
-			list.appendTag(nbtEntry);
+			list.add(nbtEntry);
 		}
 
 		return list;
 	}
 
-	public static void writeSerializablesTo(NBTTagCompound tag, String key, List<? extends INBTSerializable> elements) {
-		NBTTagList list = new NBTTagList();
+	public static void writeSerializablesTo(CompoundTag tag, String key, List<? extends INBTSerializable> elements) {
+		ListTag list = new ListTag();
 		for (INBTSerializable serializable : elements) {
-			list.appendTag(serializable.serializeNBT());
+			list.add(serializable.serializeNBT());
 		}
-		tag.setTag(key, list);
+		tag.put(key, list);
 	}
 
-	public static <T extends INBTSerializable<NBTTagCompound>> List<T> deserializeListFrom(NBTTagCompound tag, String key, Supplier<T> supplier) {
-		NBTTagList tags = tag.getTagList(key, Constants.NBT.TAG_COMPOUND);
+	public static <T extends INBTSerializable<CompoundTag>> List<T> deserializeListFrom(CompoundTag tag, String key, Supplier<T> supplier) {
+		ListTag tags = tag.getList(key, Tag.TAG_COMPOUND);
 		ArrayList<T> list = new ArrayList<>();
 		for (int i = 0; i < tags.tagCount(); i++) {
 			T element = supplier.get();
-			element.deserializeNBT(tags.getCompoundTagAt(i));
+			element.deserializeNBT(tags.getCompound(i));
 			list.add(element);
 		}
 		return list;

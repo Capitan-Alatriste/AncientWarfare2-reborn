@@ -1,18 +1,18 @@
 package net.shadowmage.ancientwarfare.core.util.parsing;
 
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class PropertyState<T extends Comparable<T>, V extends T> {
-	private IProperty<T> property;
+	private Property<T> property;
 	private V value;
 
-	public PropertyState(IProperty<T> property, V value) {
+	public PropertyState(Property<T> property, V value) {
 		this.property = property;
 		this.value = value;
 	}
 
-	public IProperty<T> getProperty() {
+	public Property<T> getProperty() {
 		return property;
 	}
 
@@ -20,7 +20,7 @@ public class PropertyState<T extends Comparable<T>, V extends T> {
 		return value;
 	}
 
-	public IBlockState update(IBlockState state) {
-		return state.withProperty(property, value);
+	public BlockState update(BlockState state) {
+		return state.setValue(property, value);
 	}
 }
