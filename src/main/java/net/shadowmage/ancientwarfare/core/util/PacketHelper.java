@@ -3,37 +3,32 @@ package net.shadowmage.ancientwarfare.core.util;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.CompoundTag;
+
+
+
+import java.io.IOException;
 
 public class PacketHelper {
-	private PacketHelper() {
-	}
+	private PacketHelper() {}
 
-	public static void writeTagToBuffer(ByteBuf buffer, CompoundTag tag) {
-		try {
-			if (tag == null) {
-				buffer.writeByte(0);
-			} else {
-				buffer.writeByte(1);
-				NbtIo.writeCompressed(tag, new ByteBufOutputStream(buffer));
-			}
-		} catch (Exception e) {
-			System.err.println("Error writing tag to buffer: " + e.getMessage());
+	public static void writeNBTTag(ByteBuf data, CompoundTag tag) {
+		try (ByteBufOutputStream outputStream = new ByteBufOutputStream(data)) {
+			NbtIo.writeCompressed(tag, outputStream);
+		}
+		catch (IOException e) {
+			net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error writing tag to buffer:\n", e);
 		}
 	}
 
-	public static CompoundTag readTagFromBuffer(ByteBuf buffer) {
-		try {
-			int val = buffer.readByte();
-			if (val == 0) {
-				return null;
-			}
-			return NbtIo.readCompressed(new ByteBufInputStream(buffer), NbtAccounter.unlimitedHeap());
-		} catch (Exception e) {
-			System.err.println("Error reading tag from buffer: " + e.getMessage());
+	public static CompoundTag readNBTTag(ByteBuf data) {
+		try (ByteBufInputStream inputStream = new ByteBufInputStream(data)) {
+			return NbtIo.readCompressed(inputStream, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
 		}
-		return null;
+		catch (IOException e) {
+			net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error reading tag from buffer:\n", e);
+			return new CompoundTag();
+		}
 	}
 }

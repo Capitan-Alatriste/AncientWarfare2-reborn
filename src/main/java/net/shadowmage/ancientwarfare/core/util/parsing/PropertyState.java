@@ -1,6 +1,26 @@
 package net.shadowmage.ancientwarfare.core.util.parsing;
 
-public class PropertyState {
-    // TODO Phase X: PropertyState requires ItemQuantityMap, Blocks, and specific config parsers
-    // that are excluded in this phase and will be ported along with core.inventory and core.config.
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+
+public class PropertyState<T extends Comparable<T>, V extends T> {
+	private Property<T> property;
+	private V value;
+
+	public PropertyState(Property<T> property, V value) {
+		this.property = property;
+		this.value = value;
+	}
+
+	public Property<T> getProperty() {
+		return property;
+	}
+
+	public V getValue() {
+		return value;
+	}
+
+	public BlockState update(BlockState state) {
+		return state.setValue(property, value);
+	}
 }

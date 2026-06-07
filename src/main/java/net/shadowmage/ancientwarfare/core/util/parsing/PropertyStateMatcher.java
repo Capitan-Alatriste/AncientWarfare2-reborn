@@ -1,6 +1,18 @@
 package net.shadowmage.ancientwarfare.core.util.parsing;
 
-public class PropertyStateMatcher {
-    // TODO Phase X: PropertyStateMatcher requires ItemQuantityMap, Blocks, and specific config parsers
-    // that are excluded in this phase and will be ported along with core.inventory and core.config.
+import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.function.Predicate;
+
+public class PropertyStateMatcher implements Predicate<BlockState> {
+	private PropertyState propertyState;
+
+	public PropertyStateMatcher(PropertyState propertyState) {
+		this.propertyState = propertyState;
+	}
+
+	@Override
+	public boolean test(BlockState iBlockState) {
+		return iBlockState.getValue(propertyState.getProperty()).equals(propertyState.getValue());
+	}
 }

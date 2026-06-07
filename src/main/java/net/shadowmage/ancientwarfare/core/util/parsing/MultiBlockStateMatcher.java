@@ -1,6 +1,24 @@
 package net.shadowmage.ancientwarfare.core.util.parsing;
 
-public class MultiBlockStateMatcher {
-    // TODO Phase X: MultiBlockStateMatcher requires ItemQuantityMap, Blocks, and specific config parsers
-    // that are excluded in this phase and will be ported along with core.inventory and core.config.
+import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.function.Predicate;
+
+public class MultiBlockStateMatcher implements Predicate<BlockState> {
+	private BlockStateMatcher[] blockStateMatchers;
+
+	public MultiBlockStateMatcher(BlockStateMatcher... blockStateMatchers) {
+		this.blockStateMatchers = blockStateMatchers;
+	}
+
+	@Override
+	public boolean test(BlockState state) {
+		for (BlockStateMatcher blockStateMatcher : blockStateMatchers) {
+			if (blockStateMatcher.test(state)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 }

@@ -1,38 +1,60 @@
 package net.shadowmage.ancientwarfare.core.util;
 
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Predicate;
 
 public class SortItemsFirstComparator implements Comparator<ItemStack> {
+	private Map<Predicate<ItemStack>, Integer> firstElements = new HashMap<>();
 
-	private final Item itemFirst;
+	public SortItemsFirstComparator(Object... firstElements) {
+		for (int i = 0; i < firstElements.length; i++) {
+			Object element = firstElements[i];
 
-	public SortItemsFirstComparator(Item item) {
-		itemFirst = item;
+			Predicate<ItemStack> matches;
+			if (element instanceof Item) {
+				matches = s -> s.getItem() == element;
+			} else if (element instanceof Block) {
+				matches = s -> s.getItem() instanceof BlockItem && ((BlockItem) s.getItem()).getBlock() == element;
+			} else if (Block.class.isAssignableFrom((Class<?>) element)) {
+				matches = s -> s.getItem() instanceof BlockItem && ((Class<?>) element).isAssignableFrom(((BlockItem) s.getItem()).getBlock().getClass());
+			} else if (Item.class.isAssignableFrom((Class<?>) element)) {
+				matches = s -> ((Class<?>) element).isAssignableFrom(s.getItem().getClass());
+			} else {
+				continue;
+			}
+
+			this.firstElements.put(matches, firstElements.length - i);
+		}
 	}
 
 	@Override
 	public int compare(ItemStack o1, ItemStack o2) {
-		if (o1.isEmpty() && o2.isEmpty()) {
+		if (o1 == o2 || o1.getItem() == o2.getItem()) {
 			return 0;
 		}
-		if (o1.isEmpty()) {
-			return 1;
-		}
-		if (o2.isEmpty()) {
-			return -1;
-		}
-		if (o1.getItem() == itemFirst) {
-			if (o2.getItem() == itemFirst) {
-				return 0;
+
+		int sortWeight1 = 0;
+		int sortWeight2 = 0;
+		for (Map.Entry<Predicate<ItemStack>, Integer> entry : firstElements.entrySet()) {
+			if (entry.getKey().test(o1)) {
+				sortWeight1 = entry.getValue();
 			}
-			return -1;
+			if (entry.getKey().test(o2)) {
+				sortWeight2 = entry.getValue();
+			}
+
+			if (sortWeight1 > 0 && sortWeight2 > 0) {
+				break;
+			}
 		}
-		if (o2.getItem() == itemFirst) {
-			return 1;
-		}
-		return 0;
+
+		return sortWeight2 - sortWeight1;
 	}
 }

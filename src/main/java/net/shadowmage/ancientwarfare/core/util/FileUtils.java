@@ -34,7 +34,7 @@ public class FileUtils {
 					root = fs.getPath("/" + base);
 				}
 				catch (IOException e) {
-					java.lang.System.err.println("Error loading FileSystem from jar: " + e.getMessage());
+					net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error loading FileSystem from jar: ", e);
 					return;
 				}
 			} else if (source.isDirectory()) {
@@ -58,7 +58,7 @@ public class FileUtils {
 					itr = Files.walk(root).iterator();
 				}
 				catch (IOException e) {
-					java.lang.System.err.println("Error iterating filesystem for: {}" + root + " " + e.getMessage());
+					net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error iterating filesystem for: {}", root, e);
 					return;
 				}
 
@@ -83,23 +83,23 @@ public class FileUtils {
 			}
 		}
 		catch (IOException e) {
-			java.lang.System.err.println("Error exporting file: " + exportFile.getAbsolutePath() + " " + e.getMessage());
+			net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error exporting file: " + exportFile.getAbsolutePath(), e);
 		}
 	}
 
 	private static boolean createFile(File exportFile) {
 		try {
 			if (!exportFile.getParentFile().exists() && !exportFile.getParentFile().mkdirs()) {
-				java.lang.System.err.println("Unable to create folders for file : " + exportFile.getAbsolutePath());
+				net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Unable to create folders for file : " + exportFile.getAbsolutePath());
 				return true;
 			}
 			if (!exportFile.createNewFile()) {
-				java.lang.System.err.println("Unable to open new file : " + exportFile.getAbsolutePath());
+				net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Unable to open new file : " + exportFile.getAbsolutePath());
 				return true;
 			}
 		}
 		catch (IOException e) {
-			java.lang.System.err.println("Error opening file : " + exportFile.getAbsolutePath() + " " + e.getMessage());
+			net.shadowmage.ancientwarfare.core.AncientWarfareCore.LOG.error("Error opening file : " + exportFile.getAbsolutePath(), e);
 			return true;
 		}
 		return false;
