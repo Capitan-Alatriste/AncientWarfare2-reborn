@@ -2,11 +2,11 @@ package net.shadowmage.ancientwarfare.core.registry;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.JsonUtils;
-import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.common.crafting.JsonContext;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.util.GsonHelper;
+
+
+
 import net.shadowmage.ancientwarfare.core.research.ResearchGoal;
 
 import javax.annotation.Nullable;
@@ -43,8 +43,8 @@ public class ResearchRegistry {
 
 		@Override
 		public void parse(JsonObject json) {
-			String name = JsonUtils.getString(json, "name");
-			int time = JsonUtils.getInt(json, "time");
+			String name = GsonHelper.getAsString(json, "name");
+			int time = GsonHelper.getAsInt(json, "time");
 			Set<String> dependencies = getDependencies(json);
 			Set<Ingredient> resources = getResources(json);
 
@@ -52,14 +52,14 @@ public class ResearchRegistry {
 		}
 
 		private Set<Ingredient> getResources(JsonObject json) {
-			JsonArray res = JsonUtils.getJsonArray(json, "resources");
-			JsonContext context = new JsonContext(AncientWarfareCore.MOD_ID);
-			return StreamSupport.stream(res.spliterator(), false).map(e -> CraftingHelper.getIngredient(e, context)).collect(Collectors.toSet());
+			JsonArray res = GsonHelper.getAsJsonArray(json, "resources");
+
+			return StreamSupport.stream(res.spliterator(), false).map(e -> Ingredient.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, e).getOrThrow()).collect(Collectors.toSet());
 		}
 
 		private Set<String> getDependencies(JsonObject json) {
-			JsonArray deps = JsonUtils.getJsonArray(json, "dependencies");
-			return StreamSupport.stream(deps.spliterator(), false).map(e -> JsonUtils.getString(e, "")).collect(Collectors.toSet());
+			JsonArray deps = GsonHelper.getAsJsonArray(json, "dependencies");
+			return StreamSupport.stream(deps.spliterator(), false).map(e -> GsonHelper.convertToString(e, "")).collect(Collectors.toSet());
 		}
 	}
 }

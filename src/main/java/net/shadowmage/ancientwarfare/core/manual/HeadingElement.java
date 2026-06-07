@@ -1,7 +1,7 @@
 package net.shadowmage.ancientwarfare.core.manual;
 
 import com.google.gson.JsonObject;
-import net.minecraft.util.JsonUtils;
+import net.minecraft.util.GsonHelper;
 
 public class HeadingElement implements IContentElement {
 	private final String text;
@@ -21,6 +21,6 @@ public class HeadingElement implements IContentElement {
 	}
 
 	public static HeadingElement parse(JsonObject elementJson) {
-		return new HeadingElement(JsonUtils.getString(elementJson, "text"), JsonUtils.getInt(elementJson, "level"));
+		return new HeadingElement(GsonHelper.getAsString(elementJson, "text"), GsonHelper.getAsInt(elementJson, "level"));
 	}
 }

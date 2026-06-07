@@ -1,16 +1,16 @@
 package net.shadowmage.ancientwarfare.core.research;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraft.util.StringUtils;
-import net.minecraft.world.storage.WorldSavedData;
-import net.minecraftforge.common.util.Constants;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import org.apache.commons.lang3.StringUtils;
+
+
 import net.shadowmage.ancientwarfare.core.datafixes.ResearchEntryIdNameFixer;
 import net.shadowmage.ancientwarfare.core.registry.ResearchRegistry;
-import net.shadowmage.ancientwarfare.core.util.StreamUtils;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,33 +21,33 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public class ResearchData extends WorldSavedData {
+public class ResearchData extends net.minecraft.world.level.saveddata.SavedData {
+	// Stub fixed
 
 	private HashMap<String, ResearchEntry> playerResearchEntries = new HashMap<>();
 
-	public ResearchData(String par1Str) {
-		super(par1Str);
+	public ResearchData() {
+
 	}
 
-	public void onPlayerLogin(EntityPlayer player) {
+	public void onPlayerLogin(Player player) {
 		if (!playerResearchEntries.containsKey(player.getName())) {
-			playerResearchEntries.put(player.getName(), new ResearchEntry());
-			this.markDirty();
+			playerResearchEntries.put(player.getName().getString(), new ResearchEntry());
+			this.setDirty();
 		}
 	}
 
-	@Override
-	public void readFromNBT(NBTTagCompound tag) {
+	public void readFromNBT(CompoundTag tag) {
 		playerResearchEntries.clear();
 
-		NBTTagList entryList = tag.getTagList("entryList", Constants.NBT.TAG_COMPOUND);
+		ListTag entryList = tag.getList("entryList", net.minecraft.nbt.Tag.TAG_COMPOUND);
 
 		ResearchEntry entry;
-		NBTTagCompound entryTag;
+		CompoundTag entryTag;
 		String name;
-		for (int i = 0; i < entryList.tagCount(); i++) {
+		for (int i = 0; i < entryList.size(); i++) {
 			entry = new ResearchEntry();
-			entryTag = entryList.getCompoundTagAt(i);
+			entryTag = entryList.getCompound(i);
 			name = entryTag.getString("playerName");
 			entry.readFromNBT(entryTag);
 			playerResearchEntries.put(name, entry);
@@ -55,40 +55,40 @@ public class ResearchData extends WorldSavedData {
 	}
 
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound tag) {
-		NBTTagList entryList = new NBTTagList();
+	public CompoundTag save(CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
+		ListTag entryList = new ListTag();
 		ResearchEntry entry;
 
-		NBTTagCompound entryTag;
+		CompoundTag entryTag;
 		for (String name : this.playerResearchEntries.keySet()) {
 			entry = this.playerResearchEntries.get(name);
-			entryTag = new NBTTagCompound();
-			entryTag.setString("playerName", name);
+			entryTag = new CompoundTag();
+			entryTag.putString("playerName", name);
 			entry.writeToNBT(entryTag);
-			entryList.appendTag(entryTag);
+			entryList.add(entryTag);
 		}
-		tag.setTag("entryList", entryList);
+		tag.put("entryList", entryList);
 		return tag;
 	}
 
 	public void removeResearchFrom(String playerName, String research) {
 		if (playerResearchEntries.containsKey(playerName)) {
 			playerResearchEntries.get(playerName).removeResearch(research);
-			markDirty();
+			setDirty();
 		}
 	}
 
 	public void clearResearchFor(String playerName) {
 		if (playerResearchEntries.containsKey(playerName)) {
 			playerResearchEntries.get(playerName).clearResearch();
-			markDirty();
+			setDirty();
 		}
 	}
 
 	public void fillResearchFor(String playerName) {
 		if (playerResearchEntries.containsKey(playerName)) {
 			playerResearchEntries.get(playerName).fillResearch();
-			markDirty();
+			setDirty();
 		}
 	}
 
@@ -131,7 +131,7 @@ public class ResearchData extends WorldSavedData {
 			playerResearchEntries.put(playerName, new ResearchEntry());
 		}
 		this.playerResearchEntries.get(playerName).addResearch(research);
-		markDirty();
+		setDirty();
 	}
 
 	public boolean hasPlayerCompletedResearch(String playerName, String research) {
@@ -155,35 +155,35 @@ public class ResearchData extends WorldSavedData {
 	public void startResearch(String playerName, String goal) {
 		if (playerResearchEntries.containsKey(playerName)) {
 			playerResearchEntries.get(playerName).startResearch(goal);
-			markDirty();
+			setDirty();
 		}
 	}
 
 	public void finishResearch(String playerName, String goal) {
 		if (playerResearchEntries.containsKey(playerName)) {
 			playerResearchEntries.get(playerName).finishResearch(goal);
-			markDirty();
+			setDirty();
 		}
 	}
 
 	public void setCurrentResearchProgress(String playerName, int progress) {
 		if (playerResearchEntries.containsKey(playerName)) {
 			playerResearchEntries.get(playerName).setResearchProgress(progress);
-			markDirty();
+			setDirty();
 		}
 	}
 
 	public void addQueuedResearch(String playerName, String goal) {
 		if (playerResearchEntries.containsKey(playerName)) {
 			playerResearchEntries.get(playerName).addQueuedResearch(goal);
-			markDirty();
+			setDirty();
 		}
 	}
 
 	public void removeQueuedResearch(String playerName, String goal) {
 		if (playerResearchEntries.containsKey(playerName)) {
 			playerResearchEntries.get(playerName).removeQueuedResearch(goal);
-			markDirty();
+			setDirty();
 		}
 	}
 
@@ -198,7 +198,7 @@ public class ResearchData extends WorldSavedData {
 		boolean ret = false;
 		if (playerResearchEntries.containsKey(playerName)) {
 			ret = playerResearchEntries.get(playerName).addProgress(amount);
-			markDirty();
+			setDirty();
 		}
 
 		return ret;
@@ -227,7 +227,7 @@ public class ResearchData extends WorldSavedData {
 		}
 
 		public void setCurrentResearch(String currentResearch) {
-			if (StringUtils.isNullOrEmpty(currentResearch)) {
+			if (StringUtils.isEmpty(currentResearch)) {
 				return;
 			}
 			this.currentResearch = currentResearch;
@@ -319,45 +319,51 @@ public class ResearchData extends WorldSavedData {
 			return queuedResearch;
 		}
 
-		private void writeToNBT(NBTTagCompound tag) {
+		private void writeToNBT(CompoundTag tag) {
 			if (currentResearch != null) {
-				tag.setString("currentResearch", currentResearch);
+				tag.putString("currentResearch", currentResearch);
 			}
-			tag.setInteger("currentProgress", currentProgress);
-			tag.setTag("completedResearch", getCompletedResearch().stream().map(NBTTagString::new).collect(StreamUtils.toNBTTagList));
-			tag.setTag("queuedResearch", queuedResearch.stream().map(NBTTagString::new).collect(StreamUtils.toNBTTagList));
+			tag.putInt("currentProgress", currentProgress);
+			ListTag listC = new ListTag();
+			for(String s : getCompletedResearch()) listC.add(net.minecraft.nbt.StringTag.valueOf(s));
+			tag.put("completedResearch", listC);
+			ListTag listQ = new ListTag();
+			for(String s : queuedResearch) listQ.add(net.minecraft.nbt.StringTag.valueOf(s));
+			tag.put("queuedResearch", listQ);
 		}
 
-		private void readFromNBT(NBTTagCompound tag) {
-			NBTTagCompound fixedTag = ResearchEntryIdNameFixer.fix(tag);
+		private void readFromNBT(CompoundTag tag) {
+			CompoundTag fixedTag = tag; // TODO Phase 1: ResearchEntryIdNameFixer.fix(tag)
 			removeInvalidEntries(fixedTag);
-			if (fixedTag.hasKey("currentResearch")) {
+			if (fixedTag.contains("currentResearch")) {
 				currentResearch = fixedTag.getString("currentResearch");
 			}
-			currentProgress = fixedTag.getInteger("currentProgress");
-			fixedTag.getTagList("completedResearch", Constants.NBT.TAG_STRING).forEach(t -> getCompletedResearch().add(((NBTTagString) t).getString()));
-			fixedTag.getTagList("queuedResearch", Constants.NBT.TAG_STRING).forEach(t -> queuedResearch.add(((NBTTagString) t).getString()));
+			currentProgress = fixedTag.getInt("currentProgress");
+			ListTag listC = fixedTag.getList("completedResearch", net.minecraft.nbt.Tag.TAG_STRING);
+			for(int i = 0; i < listC.size(); i++) getCompletedResearch().add(listC.getString(i));
+			ListTag listQ = fixedTag.getList("queuedResearch", net.minecraft.nbt.Tag.TAG_STRING);
+			for(int i = 0; i < listQ.size(); i++) queuedResearch.add(listQ.getString(i));
 		}
 
-		private void removeInvalidEntries(NBTTagCompound tag) {
-			if (tag.hasKey("currentResearch") && !ResearchRegistry.researchExists(tag.getString("currentResearch"))) {
-				tag.removeTag("currentResearch");
+		private void removeInvalidEntries(CompoundTag tag) {
+			if (tag.contains("currentResearch") && !ResearchRegistry.researchExists(tag.getString("currentResearch"))) {
+				tag.remove("currentResearch");
 			}
 			removeInvalidEntriesFromList(tag, "completedResearch");
 			removeInvalidEntriesFromList(tag, "queuedResearch");
 		}
 
-		private void removeInvalidEntriesFromList(NBTTagCompound tag, String listName) {
-			NBTTagList researchList = tag.getTagList(listName, Constants.NBT.TAG_STRING);
-			Iterator<NBTBase> it = researchList.iterator();
+		private void removeInvalidEntriesFromList(CompoundTag tag, String listName) {
+			ListTag researchList = tag.getList(listName, net.minecraft.nbt.Tag.TAG_STRING);
+			Iterator<net.minecraft.nbt.Tag> it = researchList.iterator();
 
 			while (it.hasNext()) {
-				String name = ((NBTTagString)it.next()).getString();
+				String name = it.next().getAsString();
 				if (!ResearchRegistry.researchExists(name)) {
 					it.remove();
 				}
 			}
-			tag.setTag(listName, researchList);
+			tag.put(listName, researchList);
 		}
 
 		private void removeQueuedResearch(String goal) {

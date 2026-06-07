@@ -22,9 +22,9 @@ These packages rely on Phase 1 and are heavily used by the rest of the mod.
 
 ### Phase 3: Registration and Research Framework
 Core registry systems and the research progression logic.
-- [ ] `registry` - Central registry loaders.
-- [ ] `research` - Research trees and progression logic.
-- [ ] `manual` - In-game manual content registry.
+- [x] `registry` - Central registry loaders.
+- [x] `research` - Research trees and progression logic.
+- [x] `manual` - In-game manual content registry.
 
 ### Phase 4: Items, Inventory, and Crafting
 The core functional items, custom inventories, and custom recipe systems.
