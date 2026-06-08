@@ -1,8 +1,11 @@
 package net.shadowmage.ancientwarfare.core.manual;
 
+
+
 import com.google.gson.JsonObject;
-import net.minecraft.item.ItemStack;
-import net.shadowmage.ancientwarfare.core.util.parsing.JsonHelper;
+import net.minecraft.world.item.ItemStack;
+
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +24,9 @@ public class ItemElement implements IContentElement {
 	public static IContentElement parse(JsonObject elementJson) {
 		if (elementJson.has("items")) {
 			List<ItemStack> stacks = new ArrayList<>();
-			elementJson.getAsJsonArray("items").forEach(e -> stacks.add(JsonHelper.getItemStack(e)));
+			elementJson.getAsJsonArray("items").forEach(e -> stacks.add(ItemStack.EMPTY /* TODO Phase 4: JsonHelper.getItemStack(e) */));
 			return new ItemElement(stacks.toArray(new ItemStack[stacks.size()]));
 		}
-		return new ItemElement(JsonHelper.getItemStack(elementJson));
+		return new ItemElement(ItemStack.EMPTY /* TODO Phase 4: JsonHelper.getItemStack(elementJson) */);
 	}
 }

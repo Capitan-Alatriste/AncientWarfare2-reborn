@@ -1,15 +1,16 @@
 package net.shadowmage.ancientwarfare.core.research;
 
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.shadowmage.ancientwarfare.core.gamedata.AWGameData;
-import net.shadowmage.ancientwarfare.core.network.NetworkHandler;
-import net.shadowmage.ancientwarfare.core.network.PacketResearchInit;
-import net.shadowmage.ancientwarfare.core.network.PacketResearchStart;
-import net.shadowmage.ancientwarfare.core.network.PacketResearchUpdate;
+
+// TODO Phase 6: Packet imports
+
+
 import net.shadowmage.ancientwarfare.core.registry.ResearchRegistry;
 
 import java.util.Collections;
@@ -23,7 +24,7 @@ public final class ResearchTracker {
 	private final ResearchData clientData;
 
 	private ResearchTracker() {
-		clientData = new ResearchData("AWResearchData");
+		clientData = new ResearchData();
 	}
 
 	/*
@@ -31,48 +32,48 @@ public final class ResearchTracker {
 	 */
 	@SubscribeEvent
 	public void playerLogInEvent(PlayerEvent.PlayerLoggedInEvent evt) {
-		getResearchData(evt.player.world).onPlayerLogin(evt.player);
-		PacketResearchInit init = new PacketResearchInit(getResearchData(evt.player.world));
-		NetworkHandler.sendToPlayer((EntityPlayerMP) evt.player, init);
+		getResearchData(evt.getEntity().level()).onPlayerLogin(evt.getEntity());
+		// TODO Phase 6: PacketResearchInit
+
 	}
 
-	public void clearResearch(World world, String playerName) {
-		if (world.isRemote) {
+	public void clearResearch(Level world, String playerName) {
+		if (world.isClientSide) {
 			clientData.clearResearchFor(playerName);
 		} else {
 			getResearchData(world).clearResearchFor(playerName);
-			PacketResearchInit pkt = new PacketResearchInit(getResearchData(world));
-			NetworkHandler.sendToAllPlayers(pkt);
+			// TODO Phase 6: PacketResearchInit
+
 		}
 	}
 
-	public void removeResearch(World world, String playerName, String research) {
-		if (world.isRemote) {
+	public void removeResearch(Level world, String playerName, String research) {
+		if (world.isClientSide) {
 			clientData.removeResearchFrom(playerName, research);
 		} else {
 			getResearchData(world).removeResearchFrom(playerName, research);
-			PacketResearchInit pkt = new PacketResearchInit(getResearchData(world));
-			NetworkHandler.sendToAllPlayers(pkt);
+			// TODO Phase 6: PacketResearchInit
+
 		}
 	}
 
-	public void fillResearch(World world, String playerName) {
-		if (world.isRemote) {
+	public void fillResearch(Level world, String playerName) {
+		if (world.isClientSide) {
 			clientData.fillResearchFor(playerName);
 		} else {
 			getResearchData(world).fillResearchFor(playerName);
-			PacketResearchInit pkt = new PacketResearchInit(getResearchData(world));
-			NetworkHandler.sendToAllPlayers(pkt);
+			// TODO Phase 6: PacketResearchInit
+
 		}
 	}
 
-	public void addResearch(World world, String playerName, String research) {
-		if (world.isRemote) {
+	public void addResearch(Level world, String playerName, String research) {
+		if (world.isClientSide) {
 			clientData.addResearchTo(playerName, research);
 		} else {
 			getResearchData(world).addResearchTo(playerName, research);
-			PacketResearchUpdate pkt = new PacketResearchUpdate(playerName, research, true, true);
-			NetworkHandler.sendToAllPlayers(pkt);
+			// TODO Phase 6: PacketResearchUpdate
+
 		}
 	}
 
@@ -82,14 +83,14 @@ public final class ResearchTracker {
 	 * @param research
 	 * @return
 	 */
-	public boolean hasPlayerCompleted(World world, String player, String research) {
-		if (world.isRemote) {
+	public boolean hasPlayerCompleted(Level world, String player, String research) {
+		if (world.isClientSide) {
 			return clientData.hasPlayerCompletedResearch(player, research);
 		}
 		return getResearchData(world).hasPlayerCompletedResearch(player, research);
 	}
 
-	public boolean addResearchFromNotes(World world, String player, String research) {
+	public boolean addResearchFromNotes(Level world, String player, String research) {
 		if (hasPlayerCompleted(world, player, research)) {
 			return false;
 		}
@@ -97,8 +98,8 @@ public final class ResearchTracker {
 		return true;
 	}
 
-	public boolean addProgressFromNotes(World world, String player, String research) {
-		if (world.isRemote) {
+	public boolean addProgressFromNotes(Level world, String player, String research) {
+		if (world.isClientSide) {
 			return false;
 		}
 		ResearchGoal goal = ResearchRegistry.getResearch(research);
@@ -110,22 +111,22 @@ public final class ResearchTracker {
 	 * @param playerName
 	 * @return
 	 */
-	public Set<String> getCompletedResearchFor(World world, String playerName) {
-		if (world.isRemote) {
+	public Set<String> getCompletedResearchFor(Level world, String playerName) {
+		if (world.isClientSide) {
 			return clientData.getResearchFor(playerName);
 		}
 		return getResearchData(world).getResearchFor(playerName);
 	}
 
-	public List<String> getResearchQueueFor(World world, String playerName) {
-		if (world.isRemote) {
+	public List<String> getResearchQueueFor(Level world, String playerName) {
+		if (world.isClientSide) {
 			return Collections.emptyList();
 		}
 		return getResearchData(world).getQueuedResearch(playerName);
 	}
 
-	public Set<String> getResearchableGoals(World world, String playerName) {
-		if (world.isRemote) {
+	public Set<String> getResearchableGoals(Level world, String playerName) {
+		if (world.isClientSide) {
 			return clientData.getResearchableGoals(playerName);
 		} else {
 			return getResearchData(world).getResearchableGoals(playerName);
@@ -136,8 +137,8 @@ public final class ResearchTracker {
 	 * @param world
 	 * @return
 	 */
-	private ResearchData getResearchData(World world) {
-		if (world.isRemote) {
+	private ResearchData getResearchData(Level world) {
+		if (world.isClientSide) {
 			return clientData;
 		}
 		return AWGameData.INSTANCE.getData(world, ResearchData.class);
@@ -146,69 +147,69 @@ public final class ResearchTracker {
 	/*
 	 * CLIENT ONLY
 	 */
-	public void onClientResearchReceived(NBTTagCompound researchDataTag) {
+	public void onClientResearchReceived(CompoundTag researchDataTag) {
 		this.clientData.readFromNBT(researchDataTag);
 	}
 
-	public Optional<String> getCurrentGoal(World world, String playerName) {
-		if (world.isRemote) {
+	public Optional<String> getCurrentGoal(Level world, String playerName) {
+		if (world.isClientSide) {
 			return clientData.getInProgressResearch(playerName);
 		}
 		return getResearchData(world).getInProgressResearch(playerName);
 	}
 
-	public int getProgress(World world, String playerName) {
-		if (world.isRemote) {
+	public int getProgress(Level world, String playerName) {
+		if (world.isClientSide) {
 			return clientData.getResearchProgress(playerName);
 		}
 		return getResearchData(world).getResearchProgress(playerName);
 	}
 
-	public void setProgress(World world, String playerName, int progress) {
-		if (world.isRemote) {
+	public void setProgress(Level world, String playerName, int progress) {
+		if (world.isClientSide) {
 			clientData.setCurrentResearchProgress(playerName, progress);
 		} else {
 			getResearchData(world).setCurrentResearchProgress(playerName, progress);
 		}
 	}
 
-	public void removeQueuedGoal(World world, String playerName, String goal) {
-		if (world.isRemote) {
+	public void removeQueuedGoal(Level world, String playerName, String goal) {
+		if (world.isClientSide) {
 			clientData.removeQueuedResearch(playerName, goal);
 		} else {
 			getResearchData(world).removeQueuedResearch(playerName, goal);
-			PacketResearchUpdate pkt = new PacketResearchUpdate(playerName, goal, false, false);
-			NetworkHandler.sendToAllPlayers(pkt);
+			// TODO Phase 6: PacketResearchUpdate
+
 		}
 	}
 
-	public void addQueuedGoal(World world, String playerName, String goal) {
-		if (world.isRemote) {
+	public void addQueuedGoal(Level world, String playerName, String goal) {
+		if (world.isClientSide) {
 			clientData.addQueuedResearch(playerName, goal);
 		} else {
 			getResearchData(world).addQueuedResearch(playerName, goal);
-			PacketResearchUpdate pkt = new PacketResearchUpdate(playerName, goal, true, false);
-			NetworkHandler.sendToAllPlayers(pkt);
+			// TODO Phase 6: PacketResearchUpdate
+
 		}
 	}
 
-	public void startResearch(World world, String playerName, String goal) {
-		if (world.isRemote) {
+	public void startResearch(Level world, String playerName, String goal) {
+		if (world.isClientSide) {
 			clientData.startResearch(playerName, goal);
 		} else {
 			getResearchData(world).startResearch(playerName, goal);
-			PacketResearchStart pkt = new PacketResearchStart(playerName, goal, true);
-			NetworkHandler.sendToAllPlayers(pkt);
+			// TODO Phase 6: PacketResearchStart
+
 		}
 	}
 
-	public void finishResearch(World world, String playerName, String goal) {
-		if (world.isRemote) {
+	public void finishResearch(Level world, String playerName, String goal) {
+		if (world.isClientSide) {
 			clientData.finishResearch(playerName, goal);
 		} else {
 			getResearchData(world).finishResearch(playerName, goal);
-			PacketResearchStart pkt = new PacketResearchStart(playerName, goal, false);
-			NetworkHandler.sendToAllPlayers(pkt);
+			// TODO Phase 6: PacketResearchStart
+
 		}
 	}
 

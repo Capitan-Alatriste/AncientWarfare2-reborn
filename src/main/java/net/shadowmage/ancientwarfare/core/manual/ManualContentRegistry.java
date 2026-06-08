@@ -4,9 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.JsonUtils;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.GsonHelper;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.shadowmage.ancientwarfare.core.registry.IRegistryDataParser;
 
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class ManualContentRegistry {
 	private ManualContentRegistry() {}
 
@@ -46,12 +46,12 @@ public class ManualContentRegistry {
 
 		@Override
 		public void parse(JsonObject json) {
-			String lang = JsonUtils.getString(json, "lang").toLowerCase();
-			String currentLang = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode();
+			String lang = GsonHelper.getAsString(json, "lang").toLowerCase();
+			String currentLang = net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();
 			if (!lang.equals("en_us") && !lang.equals(currentLang)) {
 				return;
 			}
-			String category = JsonUtils.getString(json, "category");
+			String category = GsonHelper.getAsString(json, "category");
 			List<IContentElement> contents = new ArrayList<>();
 			if (lang.equals("en_us") && !currentLang.equals(lang)) {
 				englishCategoryContents.put(category, contents);
@@ -59,16 +59,16 @@ public class ManualContentRegistry {
 				categoryContents.put(category, contents);
 			}
 
-			JsonArray elements = JsonUtils.getJsonArray(json, "content");
+			JsonArray elements = GsonHelper.getAsJsonArray(json, "content");
 
 			for (JsonElement el : elements) {
-				JsonObject elementJson = JsonUtils.getJsonObject(el, "");
+				JsonObject elementJson = el.getAsJsonObject();
 				contents.add(parseElement(elementJson));
 			}
 		}
 
 		private IContentElement parseElement(JsonObject elementJson) {
-			String contentType = JsonUtils.getString(elementJson, "content_type");
+			String contentType = GsonHelper.getAsString(elementJson, "content_type");
 			switch (contentType) {
 				case "text":
 					return TextElement.parse(elementJson);

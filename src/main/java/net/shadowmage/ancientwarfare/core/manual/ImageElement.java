@@ -1,7 +1,7 @@
 package net.shadowmage.ancientwarfare.core.manual;
 
 import com.google.gson.JsonObject;
-import net.minecraft.util.JsonUtils;
+import net.minecraft.util.GsonHelper;
 
 public class ImageElement implements IContentElement {
 	private String path;
@@ -15,8 +15,8 @@ public class ImageElement implements IContentElement {
 	}
 
 	public static ImageElement parse(JsonObject elementJson) {
-		return new ImageElement(JsonUtils.getString(elementJson, "path"), JsonUtils.getInt(elementJson, "width"),
-				JsonUtils.getInt(elementJson, "height"));
+		return new ImageElement(GsonHelper.getAsString(elementJson, "path"), GsonHelper.getAsInt(elementJson, "width"),
+				GsonHelper.getAsInt(elementJson, "height"));
 	}
 
 	public String getPath() {

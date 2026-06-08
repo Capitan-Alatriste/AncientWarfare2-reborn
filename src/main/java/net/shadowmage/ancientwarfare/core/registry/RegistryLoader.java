@@ -4,13 +4,16 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import net.minecraft.util.JsonUtils;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.resources.ResourceLocation;
+
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforgespi.language.IModInfo;
+
 import net.shadowmage.ancientwarfare.core.config.AWCoreStatics;
-import net.shadowmage.ancientwarfare.core.util.parsing.JsonHelper;
+
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -56,7 +59,9 @@ public class RegistryLoader {
 	}
 
 	public static void load(Predicate<IRegistryDataParser> include) {
-		ModContainer awModContainer = Loader.instance().activeModContainer();
+		Optional<? extends ModContainer> awModContainerOpt = ModList.get().getModContainerById("ancientwarfare" /* TODO Phase 9: AncientWarfareCore.MOD_ID */);
+		if (!awModContainerOpt.isPresent()) return;
+		ModContainer awModContainer = awModContainerOpt.get();
 
 		Path registryOverridesFolder = new File(AWCoreStatics.configPathForFiles + "registry").toPath();
 		if (registryOverridesFolder.toFile().exists()) {
@@ -64,7 +69,7 @@ public class RegistryLoader {
 			loadRegistries(awModContainer, registryOverridesFolder, include);
 		}
 		//noinspection ConstantConditions
-		loadRegistries(awModContainer, awModContainer.getSource(), "assets/" + awModContainer.getModId() + "/registry", include);
+		loadRegistries(awModContainer, awModContainer.getModInfo().getOwningFile().getFile().getFilePath().toFile(), "assets/" + awModContainer.getModId() + "/registry", include);
 	}
 
 	private static void loadRegistries(ModContainer mod, File source, String base, Predicate<IRegistryDataParser> include) {
@@ -76,7 +81,7 @@ public class RegistryLoader {
 		try {
 			Path root;
 			if (source.isFile()) {
-				fs = FileSystems.newFileSystem(source.toPath(), null);
+				fs = FileSystems.newFileSystem(source.toPath(), (ClassLoader) null);
 				root = fs.getPath("/" + base);
 			} else {
 				root = source.toPath().resolve(base);
@@ -85,7 +90,7 @@ public class RegistryLoader {
 			loadRegistries(mod, root, include);
 		}
 		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Error loading FileSystem from jar: ", e);
+			System.err.println /* TODO Phase 9: AncientWarfareCore.LOG.error */ (String.format("Error loading FileSystem from jar: ", e).replace("{}", "%s"));
 		}
 		finally {
 			IOUtils.closeQuietly(fs);
@@ -103,7 +108,7 @@ public class RegistryLoader {
 			itr = Files.walk(root).iterator();
 		}
 		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Error iterating filesystem for: {}", root, e);
+			System.err.println /* TODO Phase 9: AncientWarfareCore.LOG.error */ (String.format("Error iterating filesystem for: {}", root, e).replace("{}", "%s"));
 			return;
 		}
 		while (itr.hasNext()) {
@@ -134,12 +139,12 @@ public class RegistryLoader {
 
 	private static void logIncorrectDependencies() {
 		for (DependentFile dependentFile : loadLater) {
-			AncientWarfareCore.LOG.error("Non existent or circular load after dependencies in {} - {}", dependentFile.getPath().toString(), String.join(",", dependentFile.getDependencies()));
+			System.err.println /* TODO Phase 9: AncientWarfareCore.LOG.error */ (String.format("Non existent or circular load after dependencies in {} - {}", dependentFile.getPath().toString(), String.join(",", dependentFile.getDependencies())).replace("{}", "%s"));
 		}
 	}
 
 	private static void loadFile(ModContainer mod, Path root, Path file, Predicate<IRegistryDataParser> include) {
-		Loader.instance().setActiveModContainer(mod);
+
 
 		if (!"json".equals(FilenameUtils.getExtension(file.toString()))) {
 			return;
@@ -154,12 +159,12 @@ public class RegistryLoader {
 	private static void loadFile(ModContainer mod, Path file, Predicate<IRegistryDataParser> include, boolean checkDependencies, String name) {
 		String shortName = name.substring(name.lastIndexOf('/') + 1);
 
-		ResourceLocation registryName = new ResourceLocation(mod.getModId(), name);
+		ResourceLocation registryName = ResourceLocation.fromNamespaceAndPath(mod.getModId(), name);
 
 		BufferedReader reader = null;
 		try {
 			reader = Files.newBufferedReader(file);
-			JsonObject json = JsonUtils.fromJson(GSON, reader, JsonObject.class);
+			JsonObject json = GsonHelper.fromJson(GSON, reader, JsonObject.class);
 
 			if (json == null) {
 				return;
@@ -169,12 +174,12 @@ public class RegistryLoader {
 			Optional<IRegistryDataParser> parser = getParser(shortName, json);
 
 			if (!parser.isPresent()) {
-				AncientWarfareCore.LOG.error("No parser defined for file name {}", shortName);
+				System.err.println /* TODO Phase 9: AncientWarfareCore.LOG.error */ (String.format("No parser defined for file name {}", shortName).replace("{}", "%s"));
 				return;
 			}
 
 			if (checkDependencies && json.has("load_after")) {
-				Set<String> dependencies = JsonHelper.setFromJson(json.get("load_after"), e -> JsonUtils.getString(e, ""));
+				Set<String> dependencies = new java.util.HashSet<>() /* TODO Phase 2/4: JsonHelper.setFromJson */;
 				if (!areDependenciesLoaded(dependencies)) {
 					loadLater.add(new DependentFile(name, file, dependencies));
 					return;
@@ -182,7 +187,7 @@ public class RegistryLoader {
 			}
 
 			if (loadedRegistries.containsKey(registryName)) {
-				AncientWarfareCore.LOG.info("Registry {} has already been loaded in overrides, skipping...", registryName.toString());
+				System.out.println /* TODO Phase 9: AncientWarfareCore.LOG.info */ (String.format("Registry {} has already been loaded in overrides, skipping...", registryName.toString()).replace("{}", "%s"));
 				return;
 			}
 			loadedRegistries.put(registryName, parser.get().getName());
@@ -194,13 +199,13 @@ public class RegistryLoader {
 			parser.get().parse(json);
 		}
 		catch (JsonParseException e) {
-			AncientWarfareCore.LOG.error("Parsing error loading registry {}", registryName, e);
+			System.err.println /* TODO Phase 9: AncientWarfareCore.LOG.error */ (String.format("Parsing error loading registry {}", registryName, e).replace("{}", "%s"));
 		}
 		catch (MissingResourceException e) {
-			AncientWarfareCore.LOG.error(e.getMessage());
+			System.err.println /* TODO Phase 9: AncientWarfareCore.LOG.error */ (String.format(e.getMessage()).replace("{}", "%s"));
 		}
 		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Couldn't read registry {} from {}", registryName, file, e);
+			System.err.println /* TODO Phase 9: AncientWarfareCore.LOG.error */ (String.format("Couldn't read registry {} from {}", registryName, file, e).replace("{}", "%s"));
 		}
 		finally {
 			IOUtils.closeQuietly(reader);
@@ -217,17 +222,17 @@ public class RegistryLoader {
 	}
 
 	private static boolean isModLoaded(JsonObject json) {
-		return !JsonUtils.hasField(json, "mod") || Loader.isModLoaded(JsonUtils.getString(json, "mod"));
+		return !json.has("mod") || ModList.get().isLoaded(GsonHelper.getAsString(json, "mod"));
 	}
 
 	private static boolean isDisabled(JsonObject json) {
-		return json.has("disabled") && JsonUtils.getBoolean(json, "disabled");
+		return json.has("disabled") && GsonHelper.getAsBoolean(json, "disabled");
 	}
 
 	private static Optional<IRegistryDataParser> getParser(String fileName, JsonObject json) {
 		String parserName = fileName;
 		if (json.has("type")) {
-			parserName = JsonUtils.getString(json, "type");
+			parserName = GsonHelper.getAsString(json, "type");
 		}
 		return parsers.containsKey(parserName) ? Optional.of(parsers.get(parserName)) : Optional.empty();
 	}

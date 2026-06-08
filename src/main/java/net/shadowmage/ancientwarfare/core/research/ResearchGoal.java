@@ -1,14 +1,14 @@
 package net.shadowmage.ancientwarfare.core.research;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.NonNullList;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.core.NonNullList;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.shadowmage.ancientwarfare.core.config.AWCoreStatics;
-import net.shadowmage.ancientwarfare.core.crafting.AWCraftingManager;
+
 import net.shadowmage.ancientwarfare.core.registry.ResearchRegistry;
-import net.shadowmage.ancientwarfare.core.util.InventoryTools;
+
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -63,8 +63,8 @@ public class ResearchGoal {
 
 	public NonNullList<ItemStack> getResourcesForDisplay() {
 		return researchResources.stream()
-				.filter(i -> i.getMatchingStacks().length > 0)
-				.map(i -> i.getMatchingStacks()[random.nextInt(i.getMatchingStacks().length)])
+				.filter(i -> i.getItems().length > 0)
+				.map(i -> i.getItems()[random.nextInt(i.getItems().length)])
 				.collect(Collectors.toCollection(NonNullList::create));
 	}
 
@@ -83,16 +83,16 @@ public class ResearchGoal {
 		}
 
 		NonNullList<ItemStack> inventoryMatch = NonNullList.create();
-		IItemHandlerModifiable clonedHandler = InventoryTools.cloneItemHandler(handler);
+		IItemHandlerModifiable clonedHandler = null; // TODO Phase 4: InventoryTools.cloneItemHandler(handler);
 		for (Ingredient ingredient : this.researchResources) {
-			ItemStack stackMatch = AWCraftingManager.getIngredientInventoryMatch(clonedHandler, ingredient);
+			ItemStack stackMatch = ItemStack.EMPTY; // TODO Phase 4: AWCraftingManager.getIngredientInventoryMatch(clonedHandler, ingredient);
 			if (stackMatch.isEmpty()) {
 				return false;
 			}
 			inventoryMatch.add(stackMatch);
 		}
 
-		InventoryTools.removeItems(handler, inventoryMatch);
+		// TODO Phase 4: InventoryTools.removeItems(handler, inventoryMatch);
 		return true;
 	}
 

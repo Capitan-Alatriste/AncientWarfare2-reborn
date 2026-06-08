@@ -1,8 +1,9 @@
+package net.shadowmage.ancientwarfare.core.util;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
-package net.shadowmage.ancientwarfare.core.util;
+
 
 
 import net.minecraft.world.entity.Entity;
