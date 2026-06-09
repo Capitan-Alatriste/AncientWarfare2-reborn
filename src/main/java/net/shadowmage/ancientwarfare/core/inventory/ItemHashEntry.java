@@ -1,11 +1,14 @@
 package net.shadowmage.ancientwarfare.core.inventory;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Item.TooltipContext;
 
 /*
  * Lightweight wrapper for an item stack as a hashable object suitable for use as keys in maps.<br>
@@ -16,17 +19,27 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * @author Shadowmage
  */
 public final class ItemHashEntry {
-	private final NBTTagCompound itemTag;
+	private final CompoundTag itemTag;
 	private ItemStack cacheStack = ItemStack.EMPTY;
 	private String cachedNameAndTooltip = "";
+
+	private final HolderLookup.Provider provider;
 
 	/*
 	 * @param item MUST NOT BE NULL
 	 */
 	public ItemHashEntry(ItemStack item) {
+		this.provider = BuiltInRegistries.ITEM.asLookup();
 		ItemStack copy = item.copy();
 		copy.setCount(1);
-		itemTag = copy.writeToNBT(new NBTTagCompound());
+		itemTag = (CompoundTag) copy.save(provider);
+	}
+
+	public ItemHashEntry(ItemStack item, HolderLookup.Provider provider) {
+		this.provider = provider;
+		ItemStack copy = item.copy();
+		copy.setCount(1);
+		itemTag = (CompoundTag) copy.save(provider);
 	}
 
 	@Override
@@ -48,16 +61,16 @@ public final class ItemHashEntry {
 
 	public ItemStack getItemStack() {
 		if (cacheStack.isEmpty()) {
-			cacheStack = new ItemStack(itemTag.copy());
+			cacheStack = ItemStack.parse(provider, itemTag).orElse(ItemStack.EMPTY);
 		}
 		return cacheStack;
 	}
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public String getNameAndTooltip() {
 		if (cachedNameAndTooltip.isEmpty()) {
-			String stackText = cacheStack.getDisplayName().toLowerCase() + " ";
-			stackText += String.join(" ", cacheStack.getTooltip(Minecraft.getMinecraft().player, ITooltipFlag.TooltipFlags.NORMAL)).toLowerCase();
+			String stackText = getItemStack().getHoverName().getString().toLowerCase() + " ";
+			stackText += String.join(" ", getItemStack().getTooltipLines(Item.TooltipContext.of(Minecraft.getInstance().level), Minecraft.getInstance().player, TooltipFlag.Default.NORMAL).stream().map(c -> c.getString()).toList()).toLowerCase();
 
 			cachedNameAndTooltip = stackText;
 		}
@@ -65,11 +78,11 @@ public final class ItemHashEntry {
 		return cachedNameAndTooltip;
 	}
 
-	public NBTTagCompound writeToNBT() {
+	public CompoundTag save() {
 		return itemTag.copy();
 	}
 
-	public static ItemHashEntry readFromNBT(NBTTagCompound tag) {
-		return new ItemHashEntry(new ItemStack(tag));
+	public static ItemHashEntry readFromNBT(CompoundTag tag) {
+		return new ItemHashEntry(ItemStack.parse(BuiltInRegistries.ITEM.asLookup(), tag).orElse(ItemStack.EMPTY), BuiltInRegistries.ITEM.asLookup());
 	}
 }

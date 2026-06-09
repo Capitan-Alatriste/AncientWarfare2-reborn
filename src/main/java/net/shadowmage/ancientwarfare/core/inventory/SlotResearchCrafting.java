@@ -1,16 +1,16 @@
 package net.shadowmage.ancientwarfare.core.inventory;
 
 import com.google.common.collect.Lists;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryCraftResult;
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.inventory.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.NonNullList;
-import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.inventory.ResultContainer;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.core.NonNullList;
+import net.neoforged.fml.util.thread.EffectiveSide;
 import net.shadowmage.ancientwarfare.core.crafting.ICraftingRecipe;
 import net.shadowmage.ancientwarfare.core.crafting.IIngredientCount;
 import net.shadowmage.ancientwarfare.core.tile.CraftingRecipeMemory;
@@ -19,18 +19,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This needs to be used instead of vanilla SlotCrafting because vanilla one can only work with ingredients of IRecipes, but has no clue what to do
+ * This needs to be used instead of vanilla SlotCrafting because vanilla one can only work with ingredients of Recipes, but has no clue what to do
  * with other recipe ingredients and thus returns everything in CraftingMatrix in the getRemainingItems call and thus there's item dupe in that case.
  */
 public class SlotResearchCrafting extends Slot {
 	/**
 	 * The craft matrix inventory linked to this result slot.
 	 */
-	private final InventoryCrafting craftMatrix;
+	private final CraftingContainer craftMatrix;
 	/**
 	 * The player that is using the GUI where this slot resides.
 	 */
-	private final EntityPlayer player;
+	private final Player player;
 	/**
 	 * The number of items that have been crafted so far. Gets passed to ItemStack.onCrafting before being reset.
 	 */
@@ -38,7 +38,7 @@ public class SlotResearchCrafting extends Slot {
 
 	private CraftingRecipeMemory craftingRecipeMemory;
 
-	public SlotResearchCrafting(EntityPlayer player, CraftingRecipeMemory craftingRecipeMemory, InventoryCrafting craftingInventory, IInventory inventory, int slotIndex, int xPosition, int yPosition) {
+	public SlotResearchCrafting(Player player, CraftingRecipeMemory craftingRecipeMemory, CraftingContainer craftingInventory, Container inventory, int slotIndex, int xPosition, int yPosition) {
 		super(inventory, slotIndex, xPosition, yPosition);
 		this.player = player;
 		this.craftMatrix = craftingInventory;
@@ -57,10 +57,10 @@ public class SlotResearchCrafting extends Slot {
 	 * stack.
 	 */
 	public ItemStack decrStackSize(int amount) {
-		if (getHasStack()) {
-			amountCrafted += Math.min(amount, getStack().getCount());
+		if (hasItem()) {
+			amountCrafted += Math.min(amount, getItem().getCount());
 		}
-		return super.decrStackSize(amount);
+		return super.remove(amount);
 	}
 
 	/**
@@ -78,12 +78,12 @@ public class SlotResearchCrafting extends Slot {
 
 	@Override
 	protected void onCrafting(ItemStack stack) {
-		InventoryCraftResult inventorycraftresult = (InventoryCraftResult) inventory;
-		IRecipe irecipe = inventorycraftresult.getRecipeUsed();
+		ResultContainer inventorycraftresult = (ResultContainer) inventory;
+		Recipe irecipe = inventorycraftresult.getRecipeUsed();
 		if (amountCrafted > 0) {
-			stack.onCrafting(player.world, player, amountCrafted);
+			stack.onCraftedBy(player.level(), player, amountCrafted);
 			if (irecipe != null) {
-				FMLCommonHandler.instance().firePlayerCraftingEvent(player, stack, craftMatrix);
+				net.neoforged.neoforge.event.EventHooks.instance().firePlayerCraftingEvent(player, stack, craftMatrix);
 			}
 		}
 		amountCrafted = 0;
@@ -94,18 +94,18 @@ public class SlotResearchCrafting extends Slot {
 	}
 
 	@Override
-	public ItemStack onTake(EntityPlayer thePlayer, ItemStack stack) {
+	public ItemStack onTake(Player thePlayer, ItemStack stack) {
 		onCrafting(stack);
 
 		ICraftingRecipe recipe = craftingRecipeMemory.getRecipe();
 
-		net.minecraftforge.common.ForgeHooks.setCraftingPlayer(thePlayer);
+		net.neoforged.neoforge.common.CommonHooks.setCraftingPlayer(thePlayer);
 		NonNullList<ItemStack> nonnulllist = recipe.getRemainingItems(craftMatrix);
-		net.minecraftforge.common.ForgeHooks.setCraftingPlayer(null);
+		net.neoforged.neoforge.common.CommonHooks.setCraftingPlayer(null);
 
 		List<Integer> usedIngredients = new ArrayList<>();
 		for (int i = 0; i < nonnulllist.size(); ++i) {
-			ItemStack itemstack = this.craftMatrix.getStackInSlot(i);
+			ItemStack itemstack = this.craftMatrix.getItem(i);
 			ItemStack itemstack1 = nonnulllist.get(i);
 			if (!itemstack.isEmpty()) {
 				NonNullList<Ingredient> ingredients = recipe.getIngredients();
@@ -116,15 +116,15 @@ public class SlotResearchCrafting extends Slot {
 				Ingredient ingredient = ingredients.stream().filter(in -> !usedIngredients.contains(ingredients.indexOf(in)) && in.apply(finalStack)).findFirst().orElse(Ingredient.EMPTY);
 				usedIngredients.add(ingredients.indexOf(ingredient));
 				craftMatrix.decrStackSize(i, ingredient instanceof IIngredientCount ? ((IIngredientCount) ingredient).getCount() : 1);
-				itemstack = this.craftMatrix.getStackInSlot(i);
+				itemstack = this.craftMatrix.getItem(i);
 			}
 			if (!itemstack1.isEmpty()) {
 				if (itemstack.isEmpty()) {
-					this.craftMatrix.setInventorySlotContents(i, itemstack1);
-				} else if (ItemStack.areItemsEqual(itemstack, itemstack1) && ItemStack.areItemStackTagsEqual(itemstack, itemstack1)) {
+					this.craftMatrix.setItem(i, itemstack1);
+				} else if (ItemStack.isSameItem(itemstack, itemstack1) && ItemStack.isSameItemSameComponents(itemstack, itemstack1)) {
 					itemstack1.grow(itemstack.getCount());
-					this.craftMatrix.setInventorySlotContents(i, itemstack1);
-				} else if (!this.player.inventory.addItemStackToInventory(itemstack1)) {
+					this.craftMatrix.setItem(i, itemstack1);
+				} else if (!this.player.getInventory().add(itemstack1)) {
 					this.player.dropItem(itemstack1, false);
 				}
 			}

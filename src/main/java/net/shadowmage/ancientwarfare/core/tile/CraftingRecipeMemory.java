@@ -21,27 +21,27 @@ import java.util.List;
 
 public class CraftingRecipeMemory {
 	private final TileEntity tileEntity;
-	private ICraftingRecipe recipe = NoRecipeWrapper.INSTANCE;
+	// TODO Phase 4: private ICraftingRecipe recipe = NoRecipeWrapper.INSTANCE;
 
 	public ItemStackHandler bookSlot = new ItemStackHandler(1) {
 		@Override
 		public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-			return ItemResearchBook.getResearcherName(stack) != null ? super.insertItem(slot, stack, simulate) : stack;
+			return stack; // TODO Phase 4: ItemResearchBook.getResearcherName(stack) != null ? super.insertItem(slot, stack, simulate) : stack;
 		}
 
 		@Override
 		protected void onContentsChanged(int slot) {
-			tileEntity.markDirty();
+			tileEntity.setChanged();
 		}
 	};
-	public InventoryCraftResult outputSlot = new InventoryCraftResult() {
+	public net.minecraft.world.inventory.ResultContainer outputSlot = new net.minecraft.world.inventory.ResultContainer() {
 		@Override
 		public void setInventorySlotContents(int index, ItemStack stack) {
-			super.setInventorySlotContents(index, stack);
+			super.setItem(index, stack);
 		}
 	};
 	//TODO change this to ItemStackHandler?
-	public InventoryCrafting craftMatrix = new InventoryCrafting(new Container() {
+	public net.minecraft.world.inventory.TransientCraftingContainer craftMatrix = new net.minecraft.world.inventory.TransientCraftingContainer(new net.minecraft.world.inventory.AbstractContainerMenu(null, -1) {
 		@Override
 		public boolean canInteractWith(EntityPlayer playerIn) {
 			return true;
@@ -49,8 +49,8 @@ public class CraftingRecipeMemory {
 	}, 3, 3) {
 		@Override
 		public void markDirty() {
-			super.markDirty();
-			tileEntity.markDirty();
+			super.setChanged();
+			tileEntity.setChanged();
 			updateOutput(this);
 		}
 	};//the 3x3 recipe template/matrix
@@ -102,9 +102,9 @@ public class CraftingRecipeMemory {
 		outputSlot.setInventorySlotContents(0, recipe.getCraftingResult(craftingMatrix));
 	}
 
-	public ICraftingRecipe getRecipe() {
+	/* TODO Phase 4: public ICraftingRecipe getRecipe() {
 		return recipe;
-	}
+	} */
 
 	public ItemStack getCraftingResult(InventoryCrafting invCrafting) {
 		return recipe.getCraftingResult(invCrafting);

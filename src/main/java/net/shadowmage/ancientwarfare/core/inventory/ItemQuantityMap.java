@@ -1,9 +1,9 @@
 package net.shadowmage.ancientwarfare.core.inventory;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.core.NonNullList;
 import net.minecraftforge.common.util.Constants;
 import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
 
@@ -135,19 +135,19 @@ public class ItemQuantityMap {
 		return map;
 	}
 
-	public void readFromNBT(NBTTagCompound tag) {
-		NBTTagList entryList = tag.getTagList("entryList", Constants.NBT.TAG_COMPOUND);
-		for (int i = 0; i < entryList.tagCount(); i++) {
-			NBTTagCompound entryTag = entryList.getCompoundTagAt(i);
+	public void readFromNBT(CompoundTag tag) {
+		ListTag entryList = tag.getList("entryList", Constants.NBT.TAG_COMPOUND);
+		for (int i = 0; i < entryList.size(); i++) {
+			CompoundTag entryTag = entryList.getCompound(i);
 			putEntryFromNBT(entryTag);
 		}
 	}
 
-	public void putEntryFromNBT(NBTTagCompound entryTag) {
-		NBTTagCompound itemTag = entryTag.getCompoundTag("item");
+	public void putEntryFromNBT(CompoundTag entryTag) {
+		CompoundTag itemTag = entryTag.getCompound("item");
 		ItemHashEntry entry = ItemHashEntry.readFromNBT(itemTag);
 		if (!entry.getItemStack().isEmpty()) {
-			int qty = entryTag.getInteger("quantity");
+			int qty = entryTag.getInt("quantity");
 			if (qty == 0) { // when deserializing from NBT just remove all entries with 0
 				map.remove(entry);
 			} else {
@@ -158,19 +158,19 @@ public class ItemQuantityMap {
 		}
 	}
 
-	public NBTTagCompound writeToNBT(NBTTagCompound tag) {
-		NBTTagList entryList = new NBTTagList();
+	public CompoundTag save(CompoundTag tag) {
+		ListTag entryList = new ListTag();
 		for (ItemHashEntry entry : this.keySet()) {
-			entryList.appendTag(writeEntryToNBT(entry));
+			entryList.add(writeEntryToNBT(entry));
 		}
-		tag.setTag("entryList", entryList);
+		tag.put("entryList", entryList);
 		return tag;
 	}
 
-	public NBTTagCompound writeEntryToNBT(ItemHashEntry entry) {
-		NBTTagCompound entryTag = new NBTTagCompound();
-		entryTag.setTag("item", entry.writeToNBT());
-		entryTag.setInteger("quantity", getCount(entry));
+	public CompoundTag writeEntryToNBT(ItemHashEntry entry) {
+		CompoundTag entryTag = new CompoundTag();
+		entryTag.put("item", entry.save());
+		entryTag.putInt("quantity", getCount(entry));
 		return entryTag;
 	}
 

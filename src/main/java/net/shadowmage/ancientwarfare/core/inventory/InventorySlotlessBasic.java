@@ -1,7 +1,7 @@
 package net.shadowmage.ancientwarfare.core.inventory;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 public class InventorySlotlessBasic {
 
@@ -50,13 +50,13 @@ public class InventorySlotlessBasic {
 		return amount;
 	}
 
-	public void readFromNBT(NBTTagCompound tag) {
-		itemMap.readFromNBT(tag.getCompoundTag("itemMap"));
+	public void readFromNBT(CompoundTag tag) {
+		itemMap.readFromNBT(tag.getCompound("itemMap"));
 		currentSize = itemMap.getTotalItemCount();
 	}
 
-	public NBTTagCompound writeToNBT(NBTTagCompound tag) {
-		tag.setTag("itemMap", itemMap.writeToNBT(new NBTTagCompound()));
+	public CompoundTag writeToNBT(CompoundTag tag) {
+		tag.put("itemMap", itemMap.save(new CompoundTag()));
 		return tag;
 	}
 
