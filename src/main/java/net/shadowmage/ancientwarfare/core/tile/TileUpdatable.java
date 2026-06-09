@@ -30,7 +30,7 @@ public abstract class TileUpdatable extends TileEntity {
 
 	@Override
 	public void handleUpdateTag(NBTTagCompound tag) {
-		super.readFromNBT(tag);
+		super.loadAdditional(tag, net.minecraft.core.registries.BuiltInRegistries.BLOCK.asLookup());
 		handleUpdateNBT(tag);
 	}
 

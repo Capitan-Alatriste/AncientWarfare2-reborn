@@ -1,11 +1,11 @@
 package net.shadowmage.ancientwarfare.core.inventory;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemStackHandler;
-import net.shadowmage.ancientwarfare.core.init.AWCoreItems;
-import net.shadowmage.ancientwarfare.core.item.ItemBackpack;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.ItemStackHandler;
+// TODO Phase 4: import net.shadowmage.ancientwarfare.core.init.AWCoreItems;
+// TODO Phase 4: import net.shadowmage.ancientwarfare.core.item.ItemBackpack;
 
 public class ItemHandlerBackpack implements IItemHandlerModifiable {
 	private static final String BACKPACK_ITEMS_TAG = "backpackItems";
@@ -30,12 +30,12 @@ public class ItemHandlerBackpack implements IItemHandlerModifiable {
 	@Override
 	public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
 		ItemStack ret = stack;
-		if (stack.getItem() != AWCoreItems.BACKPACK) {
+		// TODO Phase 4: if (stack.getItem() != AWCoreItems.BACKPACK) {
 			ret = backpackInventory.insertItem(slot, stack, simulate);
 			if (ret.getCount() < stack.getCount()) {
 				saveToStack(backpackInventory);
 			}
-		}
+		// TODO Phase 4: }
 		return ret;
 	}
 
@@ -44,7 +44,7 @@ public class ItemHandlerBackpack implements IItemHandlerModifiable {
 		ItemStack ret = backpackInventory.extractItem(slot, amount, simulate);
 		if (!ret.isEmpty()) {
 			saveToStack(backpackInventory);
-		}
+		// TODO Phase 4: }
 		return ret;
 	}
 
@@ -60,19 +60,19 @@ public class ItemHandlerBackpack implements IItemHandlerModifiable {
 	}
 
 	private ItemStackHandler getHandler(ItemStack stack) {
-		if (!stack.isEmpty() && stack.getItem() instanceof ItemBackpack) {
-			ItemStackHandler handler = new ItemStackHandler((stack.getItemDamage() + 1) * 9);
+		// TODO Phase 4: if (!stack.isEmpty() && stack.getItem() instanceof ItemBackpack) {
+			ItemStackHandler handler = new ItemStackHandler(/* TODO Phase 4: (stack.getDamageValue() + 1) * */ 9); // Fallback size for now
 			//noinspection ConstantConditions
-			if (stack.hasTagCompound() && stack.getTagCompound().hasKey(BACKPACK_ITEMS_TAG)) {
-				handler.deserializeNBT(stack.getTagCompound().getCompoundTag(BACKPACK_ITEMS_TAG));
+			if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA) && stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).contains(BACKPACK_ITEMS_TAG)) {
+				handler.deserializeNBT(stack.registryAccess(), stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag().getCompound(BACKPACK_ITEMS_TAG));
 			}
 			return handler;
-		}
-		return new ItemStackHandler();
+		// TODO Phase 4: }
+		// TODO Phase 4: return new ItemStackHandler();
 	}
 
 	private void saveToStack(ItemStackHandler handler) {
-		NBTTagCompound invTag = handler.serializeNBT();
-		backpackStack.setTagInfo(BACKPACK_ITEMS_TAG, invTag);
+		CompoundTag invTag = handler.serializeNBT(backpackStack.registryAccess());
+		net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, backpackStack, (t) -> t.put(BACKPACK_ITEMS_TAG, invTag));
 	}
 }
