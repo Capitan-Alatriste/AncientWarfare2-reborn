@@ -1,6 +1,6 @@
 package net.shadowmage.ancientwarfare.core.item;
 
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
+import net.minecraft.world.item.Item;
 
 public class ItemComponent extends ItemMulti {
 
@@ -17,8 +17,11 @@ public class ItemComponent extends ItemMulti {
 	public static final int IRON_TORQUE_SHAFT = 7;
 	public static final int STEEL_TORQUE_SHAFT = 8;
 
-	public ItemComponent() {
-		super(AncientWarfareCore.MOD_ID, "component");
-		setCreativeTab(AncientWarfareCore.TAB);
+	public ItemComponent(Item.Properties properties) {
+		super(properties);
 	}
+
+    public ItemComponent() {
+        super(new Item.Properties());
+    }
 }

@@ -1,95 +1,46 @@
 package net.shadowmage.ancientwarfare.core.item;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.NonNullList;
-import net.minecraft.world.World;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.shadowmage.ancientwarfare.core.gui.GuiBackpack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
+// TODO Phase 6: import net.shadowmage.ancientwarfare.core.network.NetworkHandler;
+import net.minecraft.world.item.Item;
 import net.shadowmage.ancientwarfare.core.inventory.ItemHandlerBackpack;
-import net.shadowmage.ancientwarfare.core.network.NetworkHandler;
-import net.shadowmage.ancientwarfare.core.util.ModelLoaderHelper;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
 public class ItemBackpack extends ItemBaseCore {
 
-	public ItemBackpack() {
-		super("backpack");
-		setMaxStackSize(1);
-		setHasSubtypes(true);
+    // Note: In 1.21.1, subitems are typically separate items, or managed via components.
+    // For now we assume a basic backpack and leave damage value logic out as it is mostly removed in modern versions.
+	public ItemBackpack(Item.Properties properties) {
+		super(properties.stacksTo(1));
+	}
+
+    public ItemBackpack() {
+        super(new Item.Properties().stacksTo(1));
+    }
+
+	@Override
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+        // Fallback size display, originally dependent on metadata/damage
+		tooltip.add(Component.translatable("guistrings.core.backpack.size", 9));
+		tooltip.add(Component.translatable("guistrings.core.backpack.click_to_open"));
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-		tooltip.add(I18n.format("guistrings.core.backpack.size", ((stack.getItemDamage() + 1) * 9)));
-		tooltip.add(I18n.format("guistrings.core.backpack.click_to_open"));
+	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+		if (!world.isClientSide) {
+			// TODO Phase 6: NetworkHandler.INSTANCE.openGui(player, NetworkHandler.GUI_BACKPACK, 0, 0, 0);
+        }
+		return InteractionResultHolder.success(player.getItemInHand(hand));
 	}
 
-	@Override
-	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
-		if (!world.isRemote)
-			NetworkHandler.INSTANCE.openGui(player, NetworkHandler.GUI_BACKPACK, 0, 0, 0);
-		return new ActionResult<>(EnumActionResult.SUCCESS, player.getHeldItem(hand));
-	}
-
-	@Override
-	public String getUnlocalizedName(ItemStack par1ItemStack) {
-		return super.getUnlocalizedName(par1ItemStack) + "." + par1ItemStack.getItemDamage();
-	}
-
-	@Override
-	public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
-		if (!isInCreativeTab(tab)) {
-			return;
-		}
-
-		for (int i = 0; i < 4; i++) {
-			items.add(new ItemStack(this, 1, i));
-		}
-	}
-
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void registerClient() {
-		ModelLoaderHelper.registerItem(this, "core", false);
-
-		NetworkHandler.registerGui(NetworkHandler.GUI_BACKPACK, GuiBackpack.class);
-	}
-
-	@Nullable
-	@Override
-	public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable NBTTagCompound nbt) {
-		return new ICapabilityProvider() {
-			@Override
-			public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
-				return capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY;
-			}
-
-			@Nullable
-			@Override
-			public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
-				if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-					//noinspection unchecked
-					return (T) new ItemHandlerBackpack(stack);
-				}
-				return null;
-			}
-		};
-	}
+    // TODO Phase 9 (capabilities): 1.21.1 NeoForge uses capabilities differently, typically registered in RegisterCapabilitiesEvent.
+    // The ItemHandlerBackpack capability logic should be migrated there.
 }

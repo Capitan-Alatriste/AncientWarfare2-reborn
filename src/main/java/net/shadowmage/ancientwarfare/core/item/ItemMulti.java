@@ -1,50 +1,32 @@
 package net.shadowmage.ancientwarfare.core.item;
 
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import net.minecraftforge.oredict.OreDictionary;
-import net.shadowmage.ancientwarfare.core.proxy.CommonProxyBase;
-import net.shadowmage.ancientwarfare.core.proxy.IClientRegister;
-import net.shadowmage.ancientwarfare.core.util.ModelLoaderHelper;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
+// TODO Phase 9: import net.shadowmage.ancientwarfare.core.proxy.CommonProxyBase;
+// TODO Phase 9: import net.shadowmage.ancientwarfare.core.proxy.IClientRegister;
+// TODO Phase 8: import net.shadowmage.ancientwarfare.core.util.ModelLoaderHelper;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /*
- * Handle subtypes through ItemStack damage values
+ * Handle subtypes through ItemStack damage values in 1.12.
+ * In 1.21.1, this is usually achieved by creating separate Items instead of using metadata.
+ * For migration sake, we will leave the class and adjust standard methods.
+ * Heavy refactoring is required later if items are meant to be separated.
  */
-public class ItemMulti extends ItemBase implements IClientRegister {
+public class ItemMulti extends ItemBase /* implements IClientRegister */ {
 
 	private final HashMap<Integer, String> subItems = new HashMap<>();
 
-	public ItemMulti(String modID, String regName) {
-		super(modID, regName);
-		this.setHasSubtypes(true);
+	public ItemMulti(Item.Properties properties) {
+		super(properties);
 	}
 
-	@Override
-	public boolean getShareTag() {
-		return false;
-	}
-
-	@Override
-	public String getUnlocalizedName(ItemStack par1ItemStack) {
-		return super.getUnlocalizedName(par1ItemStack) + "." + par1ItemStack.getItemDamage();
-	}
-
-	@Override
-	public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
-		if (!isInCreativeTab(tab)) {
-			return;
-		}
-
-		for (Integer num : subItems.keySet()) {
-			items.add(new ItemStack(this, 1, num));
-		}
-	}
+    // Kept for legacy compatibility during migration
+    public ItemMulti(String modID, String regName) {
+        super(new Item.Properties());
+    }
 
 	public void addSubItem(int num, String modelName) {
 		if (!subItems.containsKey(num))
@@ -53,24 +35,24 @@ public class ItemMulti extends ItemBase implements IClientRegister {
 
 	public void addSubItem(int num, String modelName, String ore) {
 		addSubItem(num, modelName);
-		OreDictionary.registerOre(ore, new ItemStack(this, 1, num));
+		// TODO Tags: Add to ItemTags instead of OreDictionary
 	}
 
 	public ItemStack getSubItem(int num) {
-		return new ItemStack(this, 1, num);
+        // Warning: Damage no longer defines sub-types in 1.21.1
+		return new ItemStack(this, 1);
 	}
 
-	public ItemMulti listenToProxy(CommonProxyBase proxy) {
-		proxy.addClientRegister(this);
+	// TODO Phase 9:
+	// public ItemMulti listenToProxy(CommonProxyBase proxy) {
+	// 	proxy.addClientRegister(this);
+	// 	return this;
+	// }
 
-		return this;
-	}
-
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void registerClient() {
-		for (Map.Entry<Integer, String> entry : subItems.entrySet()) {
-			ModelLoaderHelper.registerItem(this, entry.getKey(), entry.getValue());
-		}
-	}
+	// @Override
+	// public void registerClient() {
+	// 	for (Map.Entry<Integer, String> entry : subItems.entrySet()) {
+	// 		ModelLoaderHelper.registerItem(this, entry.getKey(), entry.getValue());
+	// 	}
+	// }
 }

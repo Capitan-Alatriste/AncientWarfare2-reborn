@@ -1,22 +1,25 @@
 package net.shadowmage.ancientwarfare.core.item;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.world.item.Item;
 import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
-import net.shadowmage.ancientwarfare.core.proxy.IClientRegister;
-import net.shadowmage.ancientwarfare.core.util.ModelLoaderHelper;
+// TODO Phase 9: import net.shadowmage.ancientwarfare.core.proxy.IClientRegister;
+// TODO Phase 8: import net.shadowmage.ancientwarfare.core.util.ModelLoaderHelper;
 
-public class ItemBaseCore extends ItemBase implements IClientRegister {
-	public ItemBaseCore(String regName) {
-		super(AncientWarfareCore.MOD_ID, regName);
-		setCreativeTab(AncientWarfareCore.TAB);
+public class ItemBaseCore extends ItemBase /* implements IClientRegister */ {
+	public ItemBaseCore(Item.Properties properties) {
+		super(properties);
 
-		AncientWarfareCore.proxy.addClientRegister(this);
+        // TODO Phase 9: AncientWarfareCore.proxy.addClientRegister(this);
 	}
 
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void registerClient() {
-		ModelLoaderHelper.registerItem(this, "core");
-	}
+    // Kept for legacy compatibility if instantiated without properties
+    public ItemBaseCore(String regName) {
+        super(new Item.Properties());
+    }
+
+	// TODO Phase 9:
+	// @Override
+	// public void registerClient() {
+	// 	ModelLoaderHelper.registerItem(this, "core");
+	// }
 }
