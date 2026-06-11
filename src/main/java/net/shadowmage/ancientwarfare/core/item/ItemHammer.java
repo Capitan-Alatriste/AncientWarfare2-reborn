@@ -1,30 +1,32 @@
 package net.shadowmage.ancientwarfare.core.item;
 
 import com.google.common.collect.Multimap;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.attributes.AttributeModifier;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import net.minecraftforge.oredict.OreDictionary;
-import net.shadowmage.ancientwarfare.core.input.InputHandler;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.Item;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.Level;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
 import net.shadowmage.ancientwarfare.core.input.IItemKeyInterface;
 import net.shadowmage.ancientwarfare.core.interfaces.IWorkSite;
 import net.shadowmage.ancientwarfare.core.util.WorldTools;
@@ -37,159 +39,136 @@ public class ItemHammer extends ItemBaseCore implements IItemKeyInterface {
 	public static final String WORK_MODE_TAG = "workMode";
 	private double attackDamage = 5.d;
 
-	private ToolMaterial material;
+	private Tier material;
 
-	public ItemHammer(String regName, ToolMaterial material) {
-		super(regName);
-		attackDamage = 4.f + material.getAttackDamage();
+	public ItemHammer(String regName, Tier material, Item.Properties properties) {
+		super(properties.stacksTo(1).durability(material.getUses()));
+		attackDamage = 4.f + material.getAttackDamageBonus();
 		this.material = material;
-		maxStackSize = 1;
-		setMaxDamage(material.getMaxUses());
-		setHarvestLevel("hammer", material.getHarvestLevel());
 	}
 
-	public ToolMaterial getMaterial() {
+    public ItemHammer(String regName, Tier material) {
+        this(regName, material, new Item.Properties());
+    }
+
+	public Tier getMaterial() {
 		return material;
 	}
 
-	/*
-	 * Return the enchantability factor of the item, most of the time is based on material.
-	 */
 	@Override
-	public int getItemEnchantability() {
-		return material.getEnchantability();
+	public int getEnchantmentValue() {
+		return material.getEnchantmentValue();
 	}
 
-	/*
-	 * Return whether this item is repairable in an anvil.
-	 */
 	@Override
-	public boolean getIsRepairable(ItemStack toRepair, ItemStack repair) {
-		ItemStack mat = material.getRepairItemStack();
-		if (!mat.isEmpty() && OreDictionary.itemMatches(mat, repair, false))
+	public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
+		if (material.getRepairIngredient() != null && material.getRepairIngredient().test(repair))
 			return true;
-		return super.getIsRepairable(toRepair, repair);
+		return super.isValidRepairItem(toRepair, repair);
 	}
 
-	/*
-	 * Current implementations of this method in child classes do not use the entry argument beside ev. They just raise
-	 * the damage on the stack.
-	 */
 	@Override
-	public boolean hitEntity(ItemStack par1ItemStack, EntityLivingBase par2EntityLivingBase, EntityLivingBase par3EntityLivingBase) {
-		par1ItemStack.damageItem(1, par3EntityLivingBase);
+	public boolean hurtEnemy(ItemStack par1ItemStack, LivingEntity par2EntityLivingBase, LivingEntity par3EntityLivingBase) {
+		par1ItemStack.hurtAndBreak(1, par3EntityLivingBase, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
 		return true;
 	}
 
 	@Override
-	public boolean onBlockDestroyed(ItemStack stack, World world, IBlockState state, BlockPos pos, EntityLivingBase entityLiving) {
-		if (state.getBlockHardness(world, pos) != 0) {
-			stack.damageItem(2, entityLiving);
+	public boolean mineBlock(ItemStack stack, Level worldIn, BlockState state, BlockPos pos, LivingEntity entityLiving) {
+		if (state.getDestroySpeed(worldIn, pos) != 0.0D) {
+			stack.hurtAndBreak(2, entityLiving, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
 		}
 		return true;
 	}
 
-	/*
-	 * Gets a map of item attribute modifiers, used by ItemSword to increase hit damage.
-	 */
 	@Override
-	public Multimap<String, AttributeModifier> getAttributeModifiers(EntityEquipmentSlot slot, ItemStack stack) {
-		if (slot != EntityEquipmentSlot.MAINHAND) {
-			return super.getAttributeModifiers(slot, stack);
+	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+		ItemStack stack = player.getItemInHand(hand);
+		if (world.isClientSide) {
+			return InteractionResultHolder.success(stack);
 		}
-		Multimap<String, AttributeModifier> multimap = super.getAttributeModifiers(slot, stack);
-		multimap.put(SharedMonsterAttributes.ATTACK_DAMAGE.getName(), new AttributeModifier(ATTACK_DAMAGE_MODIFIER, "Weapon modifier", attackDamage, 0));
-		multimap.put(SharedMonsterAttributes.ATTACK_SPEED.getName(), new AttributeModifier(ATTACK_SPEED_MODIFIER, "Weapon modifier", -3.1D, 0));
-		return multimap;
+		boolean workMode = getWorkMode(stack);
+		Optional<IWorkSite> site = getWorkSite(world, player);
+
+		if (workMode && site.isPresent() && !player.isShiftKeyDown()) {
+			IWorkSite tile = site.get();
+			if (tile.hasWork() && !tile.hasWorkers()) {
+				int amt = player.isCreative() ? 100 : 1;
+				tile.addEnergyFromPlayer(player);
+				stack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+				// TODO Phase 6: NetworkHandler.INSTANCE.sendToAllAround(new PacketFluidSound(pos, SoundEvents.BLOCK_ANVIL_USE, SoundCategory.BLOCKS), ...);
+				return InteractionResultHolder.success(stack);
+			}
+		}
+
+		return InteractionResultHolder.pass(stack);
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-		String key = InputHandler.ALT_ITEM_USE_1.getDisplayName();
-		tooltip.add(I18n.format("guistrings.core.hammer.use_primary_item_key", key));
-		//noinspection ConstantConditions
-		if (stack.hasTagCompound() && stack.getTagCompound().getBoolean(WORK_MODE_TAG)) {
-			tooltip.add(I18n.format("guistrings.core.hammer.work_mode"));
-		} else {
-			tooltip.add(I18n.format("guistrings.core.hammer.rotate_mode"));
+	public InteractionResult useOnFirst(ItemStack stack, net.minecraft.world.item.context.UseOnContext context) {
+		if (context.getLevel().isClientSide) {
+			return InteractionResult.PASS;
 		}
+
+		boolean workMode = getWorkMode(stack);
+		if (!workMode && !context.getPlayer().isShiftKeyDown()) {
+            // TODO Phase 5: Rotatable block logic
+			// IBlockState state = world.getBlockState(pos);
+			// if (state.getBlock() instanceof IRotatableBlock) {
+			// 	world.setBlockState(pos, ((IRotatableBlock) state.getBlock()).rotateBlock(world, pos, state, player, side));
+			// 	return EnumActionResult.SUCCESS;
+			// } else {
+			// 	Optional<IRotatableTile> rTe = WorldTools.getTile(world, pos, IRotatableTile.class);
+			// 	if (rTe.isPresent()) {
+			// 		rTe.get().setPrimaryFacing(rTe.get().getPrimaryFacing().rotateY());
+			// 		return EnumActionResult.SUCCESS;
+			// 	}
+			// }
+		}
+
+		return InteractionResult.PASS;
 	}
 
 	@Override
-	public boolean onKeyActionClient(EntityPlayer player, ItemStack stack, ItemAltFunction altFunction) {
-		return altFunction == ItemAltFunction.ALT_FUNCTION_1;
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+		tooltip.add(Component.translatable("guistrings.core.hammer.description1"));
+		tooltip.add(Component.translatable("guistrings.core.hammer.description2"));
+
+		boolean mode = getWorkMode(stack);
+		String textMode = mode ? "guistrings.core.hammer.mode.work" : "guistrings.core.hammer.mode.rotate";
+		tooltip.add(Component.literal("Mode: ").append(Component.translatable(textMode)));
 	}
 
 	@Override
-	public void onKeyAction(EntityPlayer player, ItemStack stack, ItemAltFunction altFunction) {
-		if (player.world.isRemote) {
-			return;
-		}
-		boolean mode = false;
-		if (stack.hasTagCompound()) {
-			mode = stack.getTagCompound().getBoolean(WORK_MODE_TAG);
-		} else {
-			stack.setTagCompound(new NBTTagCompound());
-		}
+	public void onKeyAction(Player player, ItemStack stack, int key) {
+		boolean mode = getWorkMode(stack);
 		mode = !mode;
-		stack.getTagCompound().setBoolean(WORK_MODE_TAG, mode);
-		player.world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.UI_BUTTON_CLICK, SoundCategory.PLAYERS, 0.3F, 0.6F);
+		setWorkMode(stack, mode);
+
+		String textMode = mode ? "guistrings.core.hammer.mode.work" : "guistrings.core.hammer.mode.rotate";
+		player.displayClientMessage(Component.translatable(textMode), true);
 	}
 
-	@Override
-	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
-		ItemStack stack = player.getHeldItem(hand);
-		if (world.isRemote) {
-			return new ActionResult<>(EnumActionResult.SUCCESS, stack);
-		}
-		RayTraceResult hit = rayTrace(world, player, false);
-		if (hit == null) {
-			return new ActionResult<>(EnumActionResult.PASS, stack);
-		}
-		boolean mode = false;
-		if (stack.hasTagCompound()) {
-			mode = stack.getTagCompound().getBoolean(WORK_MODE_TAG);
-		} else {
-			stack.setTagCompound(new NBTTagCompound());
-		}
-		if (mode) {
-			Optional<IWorkSite> te = WorldTools.getTile(world, hit.getBlockPos(), IWorkSite.class).filter(IWorkSite::hasWork);
-			if (te.isPresent()) {
-				te.get().addEnergyFromPlayer(player);
-				playSound(world, hit, SoundEvents.BLOCK_PISTON_CONTRACT);
-			} else if (!world.isAirBlock(hit.getBlockPos())) {
-				playBlockSound(world, hit, world.getBlockState(hit.getBlockPos()));
-			}
-		} else {
-			if (!world.isAirBlock(hit.getBlockPos())) {
-				IBlockState state = world.getBlockState(hit.getBlockPos());
-				if (state.getBlock().rotateBlock(world, hit.getBlockPos(), hit.sideHit))
-					playSound(world, hit, SoundEvents.BLOCK_PISTON_EXTEND);
-				else
-					playBlockSound(world, hit, state);
+	private Optional<IWorkSite> getWorkSite(Level world, Player player) {
+		// TODO Phase 5: block raytracing
+        // RayTraceResult res = WorldTools.rayTraceBlocks(world, player, false);
+		// if (res != null && res.typeOfHit == RayTraceResult.Type.BLOCK) {
+		// 	return WorldTools.getTile(world, res.getBlockPos(), IWorkSite.class);
+		// }
+		return Optional.empty();
+	}
+
+	public static boolean getWorkMode(ItemStack stack) {
+		if (stack.has(DataComponents.CUSTOM_DATA)) {
+            CompoundTag tag = stack.get(DataComponents.CUSTOM_DATA).copyTag();
+			if (tag.contains(WORK_MODE_TAG)) {
+				return tag.getBoolean(WORK_MODE_TAG);
 			}
 		}
-		return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+		return false;
 	}
 
-	private void playSound(World world, RayTraceResult hit, SoundEvent sound) {
-		world.playSound(null, hit.getBlockPos(), sound, SoundCategory.BLOCKS, 0.2F, world.rand.nextFloat() * 0.15F + 0.6F);
-	}
-
-	private void playBlockSound(World world, RayTraceResult hit, IBlockState state) {
-		SoundType sound = state.getBlock().getSoundType(state, world, hit.getBlockPos(), null);
-		if (sound != null) {
-			world.playSound(null, hit.getBlockPos(), sound.getPlaceSound(), SoundCategory.BLOCKS, sound.getVolume() * 0.5F, sound.getPitch() * 0.8F);
-		}
-	}
-
-	/*
-	 * Returns True is the item is renderer in full 3D when hold.
-	 */
-	@SideOnly(Side.CLIENT)
-	@Override
-	public boolean isFull3D() {
-		return true;
+	public static void setWorkMode(ItemStack stack, boolean workMode) {
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putBoolean(WORK_MODE_TAG, workMode));
 	}
 }

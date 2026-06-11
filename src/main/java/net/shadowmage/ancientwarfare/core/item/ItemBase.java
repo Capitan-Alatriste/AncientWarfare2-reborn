@@ -1,12 +1,12 @@
 package net.shadowmage.ancientwarfare.core.item;
 
-import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.resources.ResourceLocation;
 
 public abstract class ItemBase extends Item {
-	public ItemBase(String modID, String regName) {
-		super();
-		setUnlocalizedName(regName);
-		setRegistryName(new ResourceLocation(modID, regName));
+	// In 1.21.1 RegistryName is no longer set inside the Item constructor
+    // UnlocalizedName is derived automatically from the registry ID
+	public ItemBase(Item.Properties properties) {
+		super(properties);
 	}
 }

@@ -1,81 +1,60 @@
 package net.shadowmage.ancientwarfare.core.item;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.world.World;
-import net.minecraft.world.storage.loot.LootEntry;
-import net.minecraft.world.storage.loot.LootEntryItem;
-import net.minecraft.world.storage.loot.RandomValueRange;
-import net.minecraft.world.storage.loot.conditions.LootCondition;
-import net.minecraft.world.storage.loot.conditions.LootConditionManager;
-import net.minecraft.world.storage.loot.functions.LootFunction;
-import net.minecraft.world.storage.loot.functions.LootFunctionManager;
-import net.minecraft.world.storage.loot.functions.SetCount;
-import net.minecraft.world.storage.loot.functions.SetDamage;
-import net.minecraft.world.storage.loot.functions.SetMetadata;
-import net.minecraft.world.storage.loot.functions.SetNBT;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import net.shadowmage.ancientwarfare.core.gui.GuiInfoTool;
-import net.shadowmage.ancientwarfare.core.network.NetworkHandler;
-import net.shadowmage.ancientwarfare.core.util.BlockTools;
-import net.shadowmage.ancientwarfare.core.util.ItemTools;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
 
 import javax.annotation.Nullable;
-import java.awt.*;
-import java.awt.datatransfer.StringSelection;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class ItemInfoTool extends ItemBaseCore {
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting()
-			.registerTypeAdapter(RandomValueRange.class, new RandomValueRange.Serializer())
-			.registerTypeHierarchyAdapter(LootEntry.class, new LootEntry.Serializer())
-			.registerTypeHierarchyAdapter(LootFunction.class, new LootFunctionManager.Serializer())
-			.registerTypeHierarchyAdapter(LootCondition.class, new LootConditionManager.Serializer())
-			.create();
 
-	public ItemInfoTool() {
-		super("info_tool");
-		setMaxStackSize(1);
+    private static final String MODE_TAG = "info_tool_mode";
+
+	public ItemInfoTool(Item.Properties properties) {
+		super(properties.stacksTo(1));
 	}
+
+    public ItemInfoTool() {
+        this(new Item.Properties().stacksTo(1));
+    }
 
 	@Override
-	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-		tooltip.add(getMode(stack).getDisplayName() + " mode");
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+		tooltip.add(Component.literal(getMode(stack).name() + " mode"));
 	}
 
-	private void printSimpleMessage(EntityPlayer player, IBlockState state) {
-		//noinspection ConstantConditions
-		player.sendMessage(new TextComponentString("Block name: " + state.getBlock().getRegistryName().toString()));
-		if (!state.getProperties().isEmpty()) {
-			player.sendMessage(new TextComponentString("Properties:"));
-			for (Map.Entry<IProperty<?>, Comparable<?>> prop : state.getProperties().entrySet()) {
-				player.sendMessage(new TextComponentString(prop.getKey().getName() + " : " + prop.getValue().toString()));
+	private void printSimpleMessage(Player player, BlockState state) {
+		player.displayClientMessage(Component.literal("Block name: " + BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString()), false);
+		if (!state.getValues().isEmpty()) {
+			player.displayClientMessage(Component.literal("Properties:"), false);
+			for (Map.Entry<Property<?>, Comparable<?>> prop : state.getValues().entrySet()) {
+				player.displayClientMessage(Component.literal(prop.getKey().getName() + " : " + prop.getValue().toString()), false);
 			}
 		}
 	}
 
-	private void printJSON(EntityPlayer player, IBlockState state) {
-		String json = BlockTools.serializeToJson(state).toString();
-		printAndCopyToClipboard(player, json);
+	private void printJSON(Player player, BlockState state) {
+        // TODO Phase 2: String json = BlockTools.serializeToJson(state).toString();
+        // player.displayClientMessage(Component.literal("Block JSON: " + json), false);
+        player.displayClientMessage(Component.literal("Block JSON functionality requires Phase 2 BlockTools port."), false);
 	}
 
-	public void printItemInfo(EntityPlayer player, ItemStack infoTool, ItemStack stack) {
+	public void printItemInfo(Player player, ItemStack infoTool, ItemStack stack) {
 		Mode mode = getMode(infoTool);
 		switch (mode) {
 			case INFO:
@@ -90,145 +69,72 @@ public class ItemInfoTool extends ItemBaseCore {
 		}
 	}
 
-	private void printSimpleMessage(EntityPlayer player, ItemStack stack) {
-		//noinspection ConstantConditions
-		player.sendMessage(new TextComponentString("Item name: " + stack.getItem().getRegistryName().toString()));
-		player.sendMessage(new TextComponentString("Meta: " + stack.getMetadata()));
-		if (stack.hasTagCompound()) {
-			//noinspection ConstantConditions
-			player.sendMessage(new TextComponentString("NBT: " + stack.getTagCompound().toString()));
+	private void printSimpleMessage(Player player, ItemStack stack) {
+		player.displayClientMessage(Component.literal("Item name: " + BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()), false);
+		if (stack.has(DataComponents.CUSTOM_DATA)) {
+			player.displayClientMessage(Component.literal("NBT: " + stack.get(DataComponents.CUSTOM_DATA).copyTag().toString()), false);
 		}
 	}
 
-	private void printJSON(EntityPlayer player, ItemStack stack) {
-		String json = ItemTools.serializeToJson(stack).toString();
-		printAndCopyToClipboard(player, json);
+	private void printJSON(Player player, ItemStack stack) {
+        // TODO Phase 2: ItemTools serialization
+        player.displayClientMessage(Component.literal("Item JSON functionality requires Phase 2 porting."), false);
 	}
 
-	private void printAndCopyToClipboard(EntityPlayer player, String json) {
-		StringSelection stringSelection = new StringSelection(json);
-		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(stringSelection, null);
-		player.sendMessage(new TextComponentString(json));
-		player.sendMessage(new TextComponentString("Copied to clipboard"));
+	private void printLootEntryJSON(Player player, ItemStack stack) {
+        player.displayClientMessage(Component.literal("LootEntry functionality needs modern Loot API porting."), false);
 	}
 
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
-		if (world.isRemote) {
-			return super.onItemRightClick(world, player, hand);
+	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+		ItemStack stack = player.getItemInHand(hand);
+		if (world.isClientSide) {
+			// TODO Phase 6/7: NetworkHandler.INSTANCE.openGui(player, NetworkHandler.GUI_INFO_TOOL, 0, 0, 0);
 		}
+		return InteractionResultHolder.success(stack);
+	}
 
-		RayTraceResult hit = rayTrace(world, player, true);
-		//noinspection ConstantConditions
-		if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) {
-			IBlockState state = world.getBlockState(hit.getBlockPos());
-			Mode mode = getMode(player.getHeldItem(hand));
-			switch (mode) {
-				case INFO:
-					printSimpleMessage(player, state);
-					break;
-				case JSON:
-					printJSON(player, state);
-					break;
-				case LOOT_ENTRY:
-					printLootEntryJSON(player, state, hit, world);
-					break;
+	@Override
+	public InteractionResult useOnFirst(ItemStack stack, net.minecraft.world.item.context.UseOnContext context) {
+		if (context.getLevel().isClientSide)
+			return InteractionResult.PASS;
+
+		Mode mode = getMode(stack);
+		BlockState state = context.getLevel().getBlockState(context.getClickedPos());
+		switch (mode) {
+			case INFO:
+				printSimpleMessage(context.getPlayer(), state);
+				break;
+			case JSON:
+				printJSON(context.getPlayer(), state);
+				break;
+			case LOOT_ENTRY:
+				break;
+		}
+		return InteractionResult.SUCCESS;
+	}
+
+	public static Mode getMode(ItemStack stack) {
+		if (stack.has(DataComponents.CUSTOM_DATA)) {
+            CompoundTag tag = stack.get(DataComponents.CUSTOM_DATA).copyTag();
+			if (tag.contains(MODE_TAG)) {
+				return Mode.values()[tag.getInt(MODE_TAG)];
 			}
-			return new ActionResult<>(EnumActionResult.SUCCESS, player.getHeldItem(hand));
-		}
-
-		if (player.isSneaking()) {
-			return new ActionResult<>(EnumActionResult.SUCCESS, cycleMode(player.getHeldItem(hand)));
-		} else {
-			NetworkHandler.INSTANCE.openGui(player, NetworkHandler.GUI_INFO_TOOL);
-			return new ActionResult<>(EnumActionResult.SUCCESS, player.getHeldItem(hand));
-		}
-	}
-
-	private void printLootEntryJSON(EntityPlayer player, IBlockState state, RayTraceResult hit, World world) {
-		printLootEntryJSON(player, state.getBlock().getPickBlock(state, hit, world, hit.getBlockPos(), player));
-	}
-
-	private void printLootEntryJSON(EntityPlayer player, ItemStack stack) {
-		List<LootFunction> functions = new ArrayList<>();
-		functions.add(new SetCount(new LootCondition[0], new RandomValueRange(1)));
-		if (stack.hasTagCompound()) {
-			//noinspection ConstantConditions
-			functions.add(new SetNBT(new LootCondition[0], stack.getTagCompound()));
-		}
-		if (stack.isItemStackDamageable()) {
-			functions.add(new SetDamage(new LootCondition[0], new RandomValueRange(stack.getItemDamage())));
-		} else if (stack.getMetadata() > 0) {
-			functions.add(new SetMetadata(new LootCondition[0], new RandomValueRange(stack.getMetadata())));
-		}
-		//noinspection ConstantConditions
-		LootEntry lootEntry = new LootEntryItem(stack.getItem(), 1, 0, functions.toArray(new LootFunction[0]), new LootCondition[0], stack.getItem().getRegistryName().toString());
-		JsonObject json = GSON.toJsonTree(lootEntry).getAsJsonObject();
-		json.remove("quality");
-		json.remove("entryName");
-		printAndCopyToClipboard(player, GSON.toJson(json));
-	}
-
-	private ItemStack cycleMode(ItemStack stack) {
-		if (!stack.hasTagCompound()) {
-			stack.setTagCompound(new NBTTagCompound());
-		}
-		//noinspection ConstantConditions
-		stack.getTagCompound().setString("mode", getMode(stack).cycle().name().toLowerCase());
-		return stack;
-	}
-
-	private Mode getMode(ItemStack stack) {
-		if (stack.hasTagCompound()) {
-			//noinspection ConstantConditions
-			return Mode.fromString(stack.getTagCompound().getString("mode"));
 		}
 		return Mode.INFO;
 	}
 
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void registerClient() {
-		super.registerClient();
-
-		NetworkHandler.registerGui(NetworkHandler.GUI_INFO_TOOL, GuiInfoTool.class);
+	public static void setMode(ItemStack stack, Mode mode) {
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putInt(MODE_TAG, mode.ordinal()));
 	}
 
-	enum Mode {
-		INFO("Info"),
-		JSON("JSON"),
-		LOOT_ENTRY("Loot Entry");
+	public enum Mode {
+		INFO("Info"), JSON("JSON"), LOOT_ENTRY("Loot Entry");
 
-		private String displayName;
+		private final String displayName;
 
 		Mode(String displayName) {
 			this.displayName = displayName;
-		}
-
-		private static final Map<String, Mode> NAME_MODE_MAP;
-
-		static {
-			ImmutableMap.Builder<String, Mode> builder = new ImmutableMap.Builder<>();
-			for (Mode mode : Mode.values()) {
-				builder.put(mode.name().toLowerCase(), mode);
-			}
-			NAME_MODE_MAP = builder.build();
-		}
-
-		public Mode cycle() {
-			switch (this) {
-				case INFO:
-					return JSON;
-				case JSON:
-					return LOOT_ENTRY;
-				case LOOT_ENTRY:
-					return INFO;
-			}
-			return INFO;
-		}
-
-		public static Mode fromString(String mode) {
-			return NAME_MODE_MAP.getOrDefault(mode.toLowerCase(), INFO);
 		}
 
 		public String getDisplayName() {

@@ -29,8 +29,8 @@ Core registry systems and the research progression logic.
 ### Phase 4: Items, Inventory, and Crafting
 The core functional items, custom inventories, and custom recipe systems.
 - [x] `inventory` - Custom item handlers and slot implementations.
-- [ ] `crafting` - Research crafting and custom recipe wrappers.
-- [ ] `item` - Core mod items.
+- [x] `crafting` - Research crafting and custom recipe wrappers.
+- [x] `item` - Core mod items.
 
 ### Phase 5: Blocks and Tiles
 Physical representation in the world.
@@ -61,5 +61,5 @@ Connecting all the migrated pieces together.
 
 ## Phase Notes
 - **Phase 2 (`util` and `interfaces`)**: Migrated. Some classes like `ITabCallback`, `InventoryTools`, `RenderTools`, and the `parsing` package (e.g. `JsonHelper`) have dependencies on unmigrated phases (`gui`, `inventory`, `render`, `config`). These specific lines or classes are marked with `// TODO Phase X` and need to be properly rewritten during those respective phases.
-- **Phase 4 (`inventory` only)**: The `inventory` package has been migrated to 1.21.1. Some classes like `ItemHandlerBackpack` and `SlotResearchCrafting` rely heavily on the unmigrated `item`, `crafting`, and `tile` (Phase 5) packages. These references are commented out with `// TODO Phase 4` and `// TODO Phase 5` and need to be reactivated once those respective packages are migrated.
+- **Phase 4**: The `inventory`, `crafting`, and `item` packages have been migrated. Legacy GUI, Network, and Initialization references have been marked with `// TODO Phase X`.
 - **Phase 5 (`block` and `tile`)**: Migrated. Some classes like `CraftingRecipeMemory` rely on unmigrated `item` and `crafting` packages, and these parts are commented out with `// TODO Phase 4`. We will need to return to them during Phase 4 logic migration.

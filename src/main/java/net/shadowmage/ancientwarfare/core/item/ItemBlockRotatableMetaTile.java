@@ -1,13 +1,15 @@
 package net.shadowmage.ancientwarfare.core.item;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.shadowmage.ancientwarfare.core.block.BlockRotationHandler;
 import net.shadowmage.ancientwarfare.core.block.BlockRotationHandler.IRotatableBlock;
 import net.shadowmage.ancientwarfare.core.block.BlockRotationHandler.IRotatableTile;
@@ -18,33 +20,42 @@ public class ItemBlockRotatableMetaTile extends ItemBlockBase {
 
 	private IRotatableBlock rotatable;
 
-	public ItemBlockRotatableMetaTile(Block block) {
-		super(block);
+	public ItemBlockRotatableMetaTile(Block block, Item.Properties properties) {
+		super(block, properties);
 		if (!(block instanceof IRotatableBlock)) {
 			throw new IllegalArgumentException("Must be a rotatable block!!");
 		}
 		rotatable = (IRotatableBlock) block;
 	}
 
+    public ItemBlockRotatableMetaTile(Block block) {
+        super(block, new Item.Properties());
+		if (!(block instanceof IRotatableBlock)) {
+			throw new IllegalArgumentException("Must be a rotatable block!!");
+		}
+		rotatable = (IRotatableBlock) block;
+    }
+
 	@Override
-	public boolean placeBlockAt(ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ, IBlockState newState) {
-		boolean val = super.placeBlockAt(stack, player, world, pos, side, hitX, hitY, hitZ, newState);
+	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
+		boolean val = super.placeBlock(context, state);
 		if (val) {
-			TileEntity te = player.world.getTileEntity(pos);
-			if (te instanceof IOwnable) {
-				((IOwnable) te).setOwner(player);
+			BlockEntity te = context.getLevel().getBlockEntity(context.getClickedPos());
+			if (te instanceof IOwnable && context.getPlayer() != null) {
+				((IOwnable) te).setOwner(context.getPlayer());
 			}
-			if (te instanceof IRotatableTile) {
-				((IRotatableTile) te).setPrimaryFacing(BlockRotationHandler.getFaceForPlacement(player, rotatable, side));
+			if (te instanceof IRotatableTile && context.getPlayer() != null) {
+                // TODO Phase 5: BlockRotationHandler should be checked.
+				((IRotatableTile) te).setPrimaryFacing(BlockRotationHandler.getFaceForPlacement(context.getPlayer(), rotatable, context.getClickedFace()));
 			}
-			BlockTools.notifyBlockUpdate(world, pos);
+			BlockTools.notifyBlockUpdate(context.getLevel(), context.getClickedPos());
 		}
 		return val;
 	}
 
 	@Override
-	public String getUnlocalizedName(ItemStack stack) {
-		return super.getUnlocalizedName(stack) + "." + stack.getItemDamage();
+	public String getDescriptionId(ItemStack stack) {
+		return super.getDescriptionId(stack);
 	}
 
 }

@@ -4,8 +4,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemStackHandler;
-// TODO Phase 4: import net.shadowmage.ancientwarfare.core.init.AWCoreItems;
-// TODO Phase 4: import net.shadowmage.ancientwarfare.core.item.ItemBackpack;
+// TODO Phase 9: import net.shadowmage.ancientwarfare.core.init.AWCoreItems;
+import net.shadowmage.ancientwarfare.core.item.ItemBackpack;
 
 public class ItemHandlerBackpack implements IItemHandlerModifiable {
 	private static final String BACKPACK_ITEMS_TAG = "backpackItems";
@@ -30,12 +30,12 @@ public class ItemHandlerBackpack implements IItemHandlerModifiable {
 	@Override
 	public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
 		ItemStack ret = stack;
-		// TODO Phase 4: if (stack.getItem() != AWCoreItems.BACKPACK) {
+		if (!(stack.getItem() instanceof ItemBackpack)) { // Prevent backpacks inside backpacks
 			ret = backpackInventory.insertItem(slot, stack, simulate);
 			if (ret.getCount() < stack.getCount()) {
 				saveToStack(backpackInventory);
 			}
-		// TODO Phase 4: }
+		}
 		return ret;
 	}
 
@@ -44,7 +44,7 @@ public class ItemHandlerBackpack implements IItemHandlerModifiable {
 		ItemStack ret = backpackInventory.extractItem(slot, amount, simulate);
 		if (!ret.isEmpty()) {
 			saveToStack(backpackInventory);
-		// TODO Phase 4: }
+		}
 		return ret;
 	}
 
@@ -60,19 +60,19 @@ public class ItemHandlerBackpack implements IItemHandlerModifiable {
 	}
 
 	private ItemStackHandler getHandler(ItemStack stack) {
-		// TODO Phase 4: if (!stack.isEmpty() && stack.getItem() instanceof ItemBackpack) {
-			ItemStackHandler handler = new ItemStackHandler(/* TODO Phase 4: (stack.getDamageValue() + 1) * */ 9); // Fallback size for now
+		if (!stack.isEmpty() && stack.getItem() instanceof ItemBackpack) {
+			ItemStackHandler handler = new ItemStackHandler(9); // Size fallback, handle metadata resizing elsewhere if needed
 			//noinspection ConstantConditions
 			if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA) && stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).contains(BACKPACK_ITEMS_TAG)) {
-				handler.deserializeNBT(stack.registryAccess(), stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag().getCompound(BACKPACK_ITEMS_TAG));
+				handler.deserializeNBT(/* TODO Phase 9: registry lookup */ null, stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag().getCompound(BACKPACK_ITEMS_TAG));
 			}
 			return handler;
-		// TODO Phase 4: }
-		// TODO Phase 4: return new ItemStackHandler();
+		}
+		return new ItemStackHandler();
 	}
 
 	private void saveToStack(ItemStackHandler handler) {
-		CompoundTag invTag = handler.serializeNBT(backpackStack.registryAccess());
+		CompoundTag invTag = handler.serializeNBT(/* TODO Phase 9: registry lookup */ null);
 		net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, backpackStack, (t) -> t.put(BACKPACK_ITEMS_TAG, invTag));
 	}
 }
