@@ -1,57 +1,43 @@
 package net.shadowmage.ancientwarfare.core.network;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+
 import net.shadowmage.ancientwarfare.core.research.ResearchTracker;
 
-public class PacketResearchUpdate extends PacketBase {
+public record PacketResearchUpdate(String playerName, String toAdd, boolean add, boolean live) implements PacketBase {
 
-	private String playerName;
-	private String toAdd;
-	private boolean add;
-	private boolean live;
+    public static final CustomPacketPayload.Type<PacketResearchUpdate> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("ancientwarfare", "research_update"));
 
-	public PacketResearchUpdate(String playerName, String toAdd, boolean add, boolean live) {
-		this.playerName = playerName;
-		this.toAdd = toAdd;
-		this.add = add;
-		this.live = live;
-	}
+    public static final StreamCodec<FriendlyByteBuf, PacketResearchUpdate> CODEC = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8, PacketResearchUpdate::playerName,
+            ByteBufCodecs.STRING_UTF8, PacketResearchUpdate::toAdd,
+            ByteBufCodecs.BOOL, PacketResearchUpdate::add,
+            ByteBufCodecs.BOOL, PacketResearchUpdate::live,
+            PacketResearchUpdate::new
+    );
 
-	public PacketResearchUpdate() {}
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
-	@Override
-	protected void writeToStream(ByteBuf data) {
-		PacketBuffer buffer = new PacketBuffer(data);
-		buffer.writeString(toAdd);
-		buffer.writeBoolean(add);
-		buffer.writeBoolean(live);
-		buffer.writeString(playerName);
-	}
-
-	@Override
-	protected void readFromStream(ByteBuf data) {
-		PacketBuffer buffer = new PacketBuffer(data);
-		toAdd = buffer.readString(40);
-		add = buffer.readBoolean();
-		live = buffer.readBoolean();
-		playerName = buffer.readString(16);
-	}
-
-	@Override
-	protected void execute(EntityPlayer player) {
-		if (live) {
-			if (add) {
-				ResearchTracker.INSTANCE.addResearch(player.world, playerName, toAdd);
-			}
-		} else {
-			if (add) {
-				ResearchTracker.INSTANCE.addQueuedGoal(player.world, playerName, toAdd);
-			} else {
-				ResearchTracker.INSTANCE.removeQueuedGoal(player.world, playerName, toAdd);
-			}
-		}
-	}
-
+    @Override
+    public void execute(Player player) {
+        if (live) {
+            if (add) {
+                ResearchTracker.INSTANCE.addResearch(player.level(), playerName, toAdd);
+            }
+        } else {
+            if (add) {
+                ResearchTracker.INSTANCE.addQueuedGoal(player.level(), playerName, toAdd);
+            } else {
+                ResearchTracker.INSTANCE.removeQueuedGoal(player.level(), playerName, toAdd);
+            }
+        }
+    }
 }

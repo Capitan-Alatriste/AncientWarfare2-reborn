@@ -2,30 +2,35 @@ package net.shadowmage.ancientwarfare.core.network;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.chat.Component;
+
 import net.shadowmage.ancientwarfare.core.manual.ManualContentRegistry;
 import net.shadowmage.ancientwarfare.core.registry.RegistryLoader;
 
-import java.io.IOException;
+public record PacketManualReload() implements PacketBase {
 
-public class PacketManualReload extends PacketBase {
-	@Override
-	protected void writeToStream(ByteBuf data) {
-		//noop
-	}
+    public static final CustomPacketPayload.Type<PacketManualReload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("ancientwarfare", "manual_reload"));
 
-	@Override
-	protected void readFromStream(ByteBuf data) throws IOException {
-		//noop
-	}
+    public static final StreamCodec<FriendlyByteBuf, PacketManualReload> CODEC = StreamCodec.unit(new PacketManualReload());
 
-	@Override
-	@SideOnly(Side.CLIENT)
-	protected void execute() {
-		ManualContentRegistry.clearContents();
-		RegistryLoader.reload("manual_content");
-		Minecraft.getMinecraft().player.sendMessage(new TextComponentString("Manual content reloaded"));
-	}
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    @Override
+    public void execute(Player player) {
+        ManualContentRegistry.clearContents();
+        RegistryLoader.reload("manual_content");
+
+        // Ensure we are safely sending the message (if on logical client)
+        if (player.level().isClientSide) {
+            player.sendSystemMessage(Component.literal("Manual content reloaded"));
+        }
+    }
 }

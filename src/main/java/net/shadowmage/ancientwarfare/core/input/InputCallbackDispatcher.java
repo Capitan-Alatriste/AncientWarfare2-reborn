@@ -1,28 +1,28 @@
 package net.shadowmage.ancientwarfare.core.input;
 
 import com.google.common.collect.Sets;
-import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.KeyMapping;
 
 import java.util.Set;
 
 class InputCallbackDispatcher {
-	private Set<IInputCallback> inputCallbacks = Sets.newHashSet();
-	private KeyBinding keyBinding;
+    private final Set<IInputCallback> inputCallbacks = Sets.newHashSet();
+    private final KeyMapping keyBinding;
 
-	KeyBinding getKeyBinding() {
-		return keyBinding;
-	}
+    KeyMapping getKeyBinding() {
+        return keyBinding;
+    }
 
-	InputCallbackDispatcher(KeyBinding keyBinding, IInputCallback initialCallback) {
-		this.keyBinding = keyBinding;
-		inputCallbacks.add(initialCallback);
-	}
+    InputCallbackDispatcher(KeyMapping keyBinding, IInputCallback initialCallback) {
+        this.keyBinding = keyBinding;
+        inputCallbacks.add(initialCallback);
+    }
 
-	void addInputCallback(IInputCallback inputCallback) {
-		inputCallbacks.add(inputCallback);
-	}
+    void addInputCallback(IInputCallback inputCallback) {
+        inputCallbacks.add(inputCallback);
+    }
 
-	void onKeyPressed() {
-		inputCallbacks.forEach(IInputCallback::onKeyPressed);
-	}
+    void onKeyPressed() {
+        inputCallbacks.forEach(IInputCallback::onKeyPressed);
+    }
 }

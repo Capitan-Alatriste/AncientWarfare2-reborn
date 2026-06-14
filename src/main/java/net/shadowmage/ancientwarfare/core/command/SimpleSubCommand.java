@@ -1,44 +1,29 @@
 package net.shadowmage.ancientwarfare.core.command;
 
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.server.MinecraftServer;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 
 public class SimpleSubCommand implements ISubCommand {
-	private String name;
-	private ISubCommandExecutor executor;
+    private final String name;
+    private final ISubCommandExecutor executor;
 
-	public SimpleSubCommand(String name, ISubCommandExecutor executor) {
-		this.name = name;
-		this.executor = executor;
-	}
+    public SimpleSubCommand(String name, ISubCommandExecutor executor) {
+        this.name = name;
+        this.executor = executor;
+    }
 
-	@Override
-	public String getName() {
-		return name;
-	}
+    @Override
+    public ArgumentBuilder<CommandSourceStack, ?> build() {
+        return Commands.literal(name).executes(ctx -> {
+            executor.execute(ctx);
+            return Command.SINGLE_SUCCESS;
+        });
+    }
 
-	@Override
-	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-		executor.execute(server, sender, args);
-	}
-
-	public interface ISubCommandExecutor {
-		void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException;
-	}
-
-	@Override
-	public int getMaxArgs() {
-		return 0;
-	}
-
-	@Override
-	public int getMinArgs() {
-		return getMaxArgs();
-	}
-
-	@Override
-	public String getUsage(ICommandSender sender) {
-		return getName();
-	}
+    public interface ISubCommandExecutor {
+        void execute(CommandContext<CommandSourceStack> ctx);
+    }
 }

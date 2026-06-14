@@ -39,9 +39,9 @@ Physical representation in the world.
 
 ### Phase 6: Networking and Commands
 Server/Client communication and server commands.
-- [ ] `network` - Network packet definitions and handlers.
-- [ ] `command` - Server commands.
-- [ ] `input` - Client keybind handling.
+- [x] `network` - Network packet definitions and handlers.
+- [x] `command` - Server commands.
+- [x] `input` - Client keybind handling.
 
 ### Phase 7: GUI and Containers
 The user interface, which relies on almost every other system (Tiles, Items, Network, Crafting).

@@ -1,10 +1,10 @@
 package net.shadowmage.ancientwarfare.core.input;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 public interface IScrollableItem {
-	boolean onScrollUp(World world, EntityPlayer player, ItemStack stack);
-	boolean onScrollDown(World world, EntityPlayer player, ItemStack stack);
+    boolean onScrollUp(Level world, Player player, ItemStack stack);
+    boolean onScrollDown(Level world, Player player, ItemStack stack);
 }

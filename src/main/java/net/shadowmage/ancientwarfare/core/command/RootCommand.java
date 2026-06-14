@@ -1,38 +1,16 @@
 package net.shadowmage.ancientwarfare.core.command;
 
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.math.BlockPos;
+import com.mojang.brigadier.CommandDispatcher;
+import net.minecraft.commands.CommandSourceStack;
 
-import javax.annotation.Nullable;
-import java.util.List;
+/**
+ * Modern Brigadier representation of a root command.
+ */
+public abstract class RootCommand extends ParentCommand {
 
-public abstract class RootCommand extends CommandBase {
-	private final ParentCommand delegate = new ParentCommand(true) {
-		@Override
-		public String getName() {
-			return RootCommand.this.getName();
-		}
-	};
+    public abstract String getName();
 
-	@Override
-	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-		delegate.execute(server, sender, args);
-	}
-
-	@Override
-	public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, @Nullable BlockPos targetPos) {
-		return delegate.getTabCompletions(server, sender, args, targetPos);
-	}
-
-	protected void registerSubCommand(ISubCommand subCommand) {
-		delegate.registerSubCommand(subCommand);
-	}
-
-	@Override
-	public String getUsage(ICommandSender sender) {
-		return delegate.getUsage(sender);
-	}
+    public void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(appendSubCommands(net.minecraft.commands.Commands.literal(getName())));
+    }
 }

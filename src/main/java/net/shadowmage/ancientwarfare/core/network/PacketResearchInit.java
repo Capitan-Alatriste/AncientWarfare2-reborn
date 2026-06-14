@@ -1,49 +1,41 @@
 package net.shadowmage.ancientwarfare.core.network;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+
 import net.shadowmage.ancientwarfare.core.research.ResearchData;
 import net.shadowmage.ancientwarfare.core.research.ResearchTracker;
 
-import java.io.IOException;
+public record PacketResearchInit(CompoundTag researchDataTag) implements PacketBase {
 
-public class PacketResearchInit extends PacketBase {
-	private NBTTagCompound researchDataTag;
+    public static final CustomPacketPayload.Type<PacketResearchInit> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("ancientwarfare", "research_init"));
 
-	public PacketResearchInit(ResearchData data) {
-		researchDataTag = new NBTTagCompound();
-		data.writeToNBT(researchDataTag);
-	}
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketResearchInit> CODEC = StreamCodec.composite(
+            ByteBufCodecs.COMPOUND_TAG, PacketResearchInit::researchDataTag,
+            PacketResearchInit::new
+    );
 
-	public PacketResearchInit() {}
+    public PacketResearchInit(ResearchData data) {
+        this(createTag(data));
+    }
 
-	@Override
-	protected void writeToStream(ByteBuf data) {
-		try (ByteBufOutputStream outputStream = new ByteBufOutputStream(data)) {
-			CompressedStreamTools.writeCompressed(researchDataTag, outputStream);
-		}
-		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Error writing research packet data: ", e);
-		}
-	}
+    private static CompoundTag createTag(ResearchData data) {
+        CompoundTag tag = new CompoundTag();
+        return data.save(tag, null);
+    }
 
-	@Override
-	protected void readFromStream(ByteBuf data) {
-		try (ByteBufInputStream inputStream = new ByteBufInputStream(data)) {
-			researchDataTag = CompressedStreamTools.readCompressed(inputStream);
-		}
-		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Error reading research packet data: ", e);
-		}
-	}
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
-	@Override
-	protected void execute() {
-		ResearchTracker.INSTANCE.onClientResearchReceived(researchDataTag);
-	}
-
+    @Override
+    public void execute(Player player) {
+        ResearchTracker.INSTANCE.onClientResearchReceived(researchDataTag);
+    }
 }
