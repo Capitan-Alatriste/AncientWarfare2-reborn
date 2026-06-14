@@ -1,64 +1,16 @@
 package net.shadowmage.ancientwarfare.core.network;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.common.network.internal.FMLProxyPacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.world.entity.player.Player;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.function.Supplier;
-
-public abstract class PacketBase {
-
-	private static HashMap<Integer, Supplier<? extends PacketBase>> packetTypes = new HashMap<>();
-	private static HashMap<Class<? extends PacketBase>, Integer> packetIDs = new HashMap<>();
-
-	public static <T extends PacketBase> void registerPacketType(int typeNum, Class<T> packetClz, Supplier<T> instantiate) {
-		packetTypes.put(typeNum, instantiate);
-		packetIDs.put(packetClz, typeNum);
-	}
-
-	public PacketBase() {
-	}
-
-	private void writeHeaderToStream(ByteBuf data) {
-		data.writeByte(packetIDs.get(getClass()));
-	}
-
-	private static PacketBase readHeaderFromStream(ByteBuf data) {
-		int typeNum = data.readByte();
-
-		if (!packetTypes.containsKey(typeNum)) {
-			throw new IllegalArgumentException("Unregistered packet id received - " + typeNum);
-		}
-
-		return packetTypes.get(typeNum).get();
-	}
-
-	protected abstract void writeToStream(ByteBuf data);
-
-	protected abstract void readFromStream(ByteBuf data) throws IOException;
-
-	protected void execute() {
-	}
-
-	@SuppressWarnings("squid:S1172") //used in overrides
-	protected void execute(EntityPlayer player) {
-		execute();
-	}
-
-	static PacketBase readPacket(ByteBuf data) throws IOException {
-		PacketBase pkt = readHeaderFromStream(data);
-		pkt.readFromStream(data);
-		return pkt;
-	}
-
-	final FMLProxyPacket getFMLPacket() {
-		PacketBuffer buf = new PacketBuffer(Unpooled.buffer());
-		writeHeaderToStream(buf);
-		writeToStream(buf);
-		return new FMLProxyPacket(buf, NetworkHandler.CHANNELNAME);
-	}
+/**
+ * Interface that all core ancient warfare packets should implement.
+ * This simplifies migration from the old 1.12.2 PacketBase class.
+ */
+public interface PacketBase extends CustomPacketPayload {
+    /**
+     * Executes the packet logic.
+     * @param player The player context on which this packet is executed.
+     */
+    void execute(Player player);
 }

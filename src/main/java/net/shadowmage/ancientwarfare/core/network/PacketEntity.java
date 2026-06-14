@@ -1,57 +1,42 @@
 package net.shadowmage.ancientwarfare.core.network;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
-import net.shadowmage.ancientwarfare.core.interfaces.IEntityPacketHandler;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 
-import java.io.IOException;
+public record PacketEntity(int entityId, CompoundTag packetData) implements PacketBase {
 
-public class PacketEntity extends PacketBase {
-	private int entityId;
-	public NBTTagCompound packetData = new NBTTagCompound();
+    public static final CustomPacketPayload.Type<PacketEntity> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("ancientwarfare", "entity"));
 
-	public PacketEntity() {}
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketEntity> CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, PacketEntity::entityId,
+            ByteBufCodecs.COMPOUND_TAG, PacketEntity::packetData,
+            PacketEntity::new
+    );
 
-	public PacketEntity(Entity e) {
-		this.entityId = e.getEntityId();
-	}
+    public PacketEntity(Entity e, CompoundTag packetData) {
+        this(e.getId(), packetData);
+    }
 
-	@Override
-	protected void writeToStream(ByteBuf data) {
-		data.writeInt(entityId);
-		if (packetData != null) {
-			try (ByteBufOutputStream outputStream = new ByteBufOutputStream(data)) {
-				CompressedStreamTools.writeCompressed(packetData, outputStream);
-			}
-			catch (IOException e) {
-				AncientWarfareCore.LOG.error("Error writing entity packet data: ", e);
-			}
-		}
-	}
+    public PacketEntity(Entity e) {
+        this(e.getId(), new CompoundTag());
+    }
 
-	@Override
-	protected void readFromStream(ByteBuf data) {
-		entityId = data.readInt();
-		try (ByteBufInputStream inputStream = new ByteBufInputStream(data)) {
-			packetData = CompressedStreamTools.readCompressed(inputStream);
-		}
-		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Error reading entity packet data: ", e);
-		}
-	}
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
-	@Override
-	protected void execute(EntityPlayer player) {
-		Entity e = player.world.getEntityByID(entityId);
-		if (e instanceof IEntityPacketHandler) {
-			((IEntityPacketHandler) e).handlePacketData(packetData);
-		}
-	}
-
+    @Override
+    public void execute(Player player) {
+        Entity e = player.level().getEntity(entityId);
+        // TODO Phase 2: if (e instanceof net.shadowmage.ancientwarfare.core.interfaces.IEntityPacketHandler handler) {
+        // TODO Phase 2:     handler.handlePacketData(packetData);
+        // TODO Phase 2: }
+    }
 }

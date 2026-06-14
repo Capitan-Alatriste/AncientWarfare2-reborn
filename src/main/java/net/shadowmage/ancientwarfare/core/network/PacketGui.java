@@ -1,75 +1,58 @@
 package net.shadowmage.ancientwarfare.core.network;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
-import net.shadowmage.ancientwarfare.core.AncientWarfareCore;
-import net.shadowmage.ancientwarfare.core.container.ContainerBase;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 
-import java.io.IOException;
+// TODO Phase 7: import net.shadowmage.ancientwarfare.core.container.ContainerBase;
 
-public class PacketGui extends PacketBase {
-	private NBTTagCompound packetData;
+public record PacketGui(CompoundTag packetData) implements PacketBase {
 
-	public PacketGui(NBTTagCompound packetData) {
-		this.packetData = packetData;
-	}
+    public static final CustomPacketPayload.Type<PacketGui> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("ancientwarfare", "gui"));
 
-	public PacketGui() {
-		packetData = new NBTTagCompound();
-	}
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketGui> CODEC = StreamCodec.composite(
+            ByteBufCodecs.COMPOUND_TAG, PacketGui::packetData,
+            PacketGui::new
+    );
 
-	public void setOpenGui(int id, int x, int y, int z) {
-		packetData.setBoolean("openGui", true);
-		packetData.setInteger("id", id);
-		packetData.setInteger("x", x);
-		packetData.setInteger("y", y);
-		packetData.setInteger("z", z);
-	}
+    public PacketGui() {
+        this(new CompoundTag());
+    }
 
-	public void setTag(String key, NBTTagCompound tag) {
-		packetData.setTag(key, tag);
-	}
+    public void setOpenGui(int id, int x, int y, int z) {
+        packetData.putBoolean("openGui", true);
+        packetData.putInt("id", id);
+        packetData.putInt("x", x);
+        packetData.putInt("y", y);
+        packetData.putInt("z", z);
+    }
 
-	public void setData(NBTTagCompound tag) {
-		this.packetData = tag;
-	}
+    public void setTag(String key, CompoundTag tag) {
+        packetData.put(key, tag);
+    }
 
-	@Override
-	protected void writeToStream(ByteBuf data) {
-		if (packetData != null) {
-			try (ByteBufOutputStream outputStream = new ByteBufOutputStream(data)) {
-				CompressedStreamTools.writeCompressed(packetData, outputStream);
-			}
-			catch (IOException e) {
-				AncientWarfareCore.LOG.error("Error writing gui packet data: ", e);
-			}
-		}
-	}
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
-	@Override
-	protected void readFromStream(ByteBuf data) {
-		try (ByteBufInputStream inputStream = new ByteBufInputStream(data)) {
-			packetData = CompressedStreamTools.readCompressed(inputStream);
-		}
-		catch (IOException e) {
-			AncientWarfareCore.LOG.error("Error reading gui packet data: ", e);
-
-		}
-	}
-
-	@Override
-	protected void execute(EntityPlayer player) {
-		if (packetData.hasKey("openGui")) {
-			NetworkHandler.INSTANCE.openGui(player, packetData.getInteger("id"), packetData.getInteger("x"), packetData.getInteger("y"), packetData.getInteger("z"));
-		} else if (player.openContainer instanceof ContainerBase) {
-			((ContainerBase) player.openContainer).onPacketData(packetData);
-		} else {
-			AncientWarfareCore.LOG.error("Invalid target found when processing GUI/Container packet : {} packet: {}", player.openContainer, packetData);
-		}
-	}
-
+    @Override
+    public void execute(Player player) {
+        if (packetData.contains("openGui")) {
+            NetworkHandler.INSTANCE.openGui(player, packetData.getInt("id"), packetData.getInt("x"), packetData.getInt("y"), packetData.getInt("z"));
+        } else {
+            // TODO Phase 7: Re-enable container packet logic
+            /*
+            if (player.containerMenu instanceof ContainerBase container) {
+                container.onPacketData(packetData);
+            } else {
+                AncientWarfareCore.LOG.error("Invalid target found when processing GUI/Container packet : {} packet: {}", player.containerMenu, packetData);
+            }
+            */
+        }
+    }
 }

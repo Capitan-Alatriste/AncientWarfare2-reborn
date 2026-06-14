@@ -1,41 +1,36 @@
 package net.shadowmage.ancientwarfare.core.input;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumHand;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.shadowmage.ancientwarfare.core.network.NetworkHandler;
 import net.shadowmage.ancientwarfare.core.network.PacketItemInteraction;
 
-import javax.annotation.Nonnull;
-
-@SideOnly(Side.CLIENT)
 class ItemInputCallback implements IInputCallback {
-	private final IItemKeyInterface.ItemAltFunction altFunction;
+    private final IItemKeyInterface.ItemAltFunction altFunction;
 
-	ItemInputCallback(IItemKeyInterface.ItemAltFunction altFunction) {
-		this.altFunction = altFunction;
-	}
+    ItemInputCallback(IItemKeyInterface.ItemAltFunction altFunction) {
+        this.altFunction = altFunction;
+    }
 
-	@Override
-	public void onKeyPressed() {
-		Minecraft minecraft = Minecraft.getMinecraft();
-		if (minecraft.currentScreen != null) {
-			return;
-		}
-		if (!runAction(minecraft, EnumHand.MAIN_HAND)) {
-			runAction(minecraft, EnumHand.OFF_HAND);
-		}
-	}
+    @Override
+    public void onKeyPressed() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen != null || minecraft.player == null) {
+            return;
+        }
+        if (!runAction(minecraft, InteractionHand.MAIN_HAND)) {
+            runAction(minecraft, InteractionHand.OFF_HAND);
+        }
+    }
 
-	private boolean runAction(Minecraft minecraft, EnumHand hand) {
-		ItemStack stack = minecraft.player.getHeldItem(hand);
-		if (stack.getItem() instanceof IItemKeyInterface && ((IItemKeyInterface) stack.getItem()).onKeyActionClient(minecraft.player, stack, altFunction)) {
-			PacketItemInteraction pkt = new PacketItemInteraction(altFunction);
-			NetworkHandler.sendToServer(pkt);
-			return true;
-		}
-		return false;
-	}
+    private boolean runAction(Minecraft minecraft, InteractionHand hand) {
+        ItemStack stack = minecraft.player.getItemInHand(hand);
+        if (stack.getItem() instanceof IItemKeyInterface keyInterface && keyInterface.onKeyActionClient(minecraft.player, stack, altFunction)) {
+            PacketItemInteraction pkt = new PacketItemInteraction((byte) altFunction.ordinal());
+            NetworkHandler.sendToServer(pkt);
+            return true;
+        }
+        return false;
+    }
 }
